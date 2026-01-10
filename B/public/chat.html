@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Private Chat</title>
+</head>
+<body>
+
+<h2>Private Chat</h2>
+
+<input id="receiverId" placeholder="Receiver User ID"><br><br>
+
+<div id="messages" style="border:1px solid #000;height:200px;overflow:auto;"></div><br>
+
+<input id="msg" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="chat.js"></script>
+</body>
+</html>
