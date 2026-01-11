@@ -59,7 +59,7 @@ async function login() {
   }
 
   localStorage.setItem("token", data.token);
-  token = data.token; // 🔥 IMPORTANT FIX
+  token = data.token;
 
   window.location.href = "chat.html";
 }
@@ -100,7 +100,7 @@ function openChat(user) {
 }
 
 /* ======================
-   LOAD MESSAGES
+   LOAD MESSAGES (TEXT + IMAGE SAFE)
 ====================== */
 async function loadMessages() {
   if (!currentUser) return;
@@ -120,14 +120,29 @@ async function loadMessages() {
   box.innerHTML = "";
 
   msgs.forEach(m => {
-    const p = document.createElement("p");
-    p.innerText = m.message;
-    box.appendChild(p);
+
+    // ✅ TEXT MESSAGE (old system safe)
+    if (m.message) {
+      const p = document.createElement("p");
+      p.innerText = m.message;
+      box.appendChild(p);
+    }
+
+    // ✅ IMAGE MESSAGE (new system safe)
+    if (m.image) {
+      const img = document.createElement("img");
+      img.src = API + m.image;
+      img.style.maxWidth = "200px";
+      img.style.display = "block";
+      img.style.margin = "5px 0";
+      box.appendChild(img);
+    }
+
   });
 }
 
 /* ======================
-   SEND MESSAGE
+   SEND TEXT MESSAGE
 ====================== */
 async function sendMessage() {
   if (!currentUser) {
@@ -157,6 +172,45 @@ async function sendMessage() {
 }
 
 /* ======================
+   SEND IMAGE
+====================== */
+async function sendImage() {
+  if (!currentUser) {
+    alert("Select a user first");
+    return;
+  }
+
+  const input = document.getElementById("imageInput");
+  const file = input.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const uploadRes = await fetch(API + "/api/media/image", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await uploadRes.json();
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      image: data.imageUrl
+    })
+  });
+
+  input.value = "";
+  loadMessages();
+}
+
+/* ======================
    SOCKET (REAL-TIME)
 ====================== */
 if (token && window.location.pathname.includes("chat")) {
@@ -176,4 +230,10 @@ if (token && window.location.pathname.includes("chat")) {
   });
 
   loadUsers();
+
+  // 🔁 Restore last open chat after reload
+  const last = localStorage.getItem("lastChatUser");
+  if (last) {
+    openChat(JSON.parse(last));
+  }
 }

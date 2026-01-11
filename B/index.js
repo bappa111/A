@@ -21,9 +21,15 @@ app.use(cors());
 app.use(express.json());
 
 /* ======================
-   SERVE FRONTEND (CRITICAL)
+   SERVE FRONTEND + UPLOADS
 ====================== */
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+/* ======================
+   MEDIA ROUTES (IMAGE / FUTURE AUDIO)
+====================== */
+app.use("/api/media", require("./routes/mediaRoutes"));
 
 /* ======================
    API ROUTES
