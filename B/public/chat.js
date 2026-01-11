@@ -1,16 +1,23 @@
+// SOCKET
 const socket = io();
 
-// DOM
-const usersDiv = document.getElementById("users");
-const messagesDiv = document.getElementById("messages");
-const msgInput = document.getElementById("msg");
-
-// TOKEN
+// TOKEN (একবারই)
 const token = localStorage.getItem("token");
 if (!token) {
   alert("Please login first");
   window.location.href = "/";
 }
+
+// Decode my user id from token
+const myId = JSON.parse(atob(token.split(".")[1])).id;
+
+// join my own room
+socket.emit("join", myId);
+
+// DOM
+const usersDiv = document.getElementById("users");
+const messagesDiv = document.getElementById("messages");
+const msgInput = document.getElementById("msg");
 
 // STATE
 let currentUserId = null;
@@ -19,15 +26,11 @@ let currentUserId = null;
 async function loadUsers() {
   const res = await fetch("/api/users", {
     headers: {
-      "Authorization": "Bearer " + token
+      Authorization: "Bearer " + token
     }
   });
 
-  console.log("USERS STATUS:", res.status);
-
   const users = await res.json();
-  console.log("USERS DATA:", users);
-
   usersDiv.innerHTML = "";
 
   users.forEach(u => {
@@ -45,7 +48,7 @@ async function openChat(userId) {
 
   const res = await fetch(`/api/chat/${userId}`, {
     headers: {
-      "Authorization": "Bearer " + token
+      Authorization: "Bearer " + token
     }
   });
 
@@ -74,7 +77,7 @@ async function sendMessage() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
+      Authorization: "Bearer " + token
     },
     body: JSON.stringify({
       receiverId: currentUserId,
@@ -82,12 +85,15 @@ async function sendMessage() {
     })
   });
 
-  socket.emit("sendMessage", { message: text });
+  socket.emit("sendMessage", {
+    receiverId: currentUserId,
+    message: text
+  });
+
   msgInput.value = "";
-  openChat(currentUserId);
 }
 
-// SOCKET RECEIVE
+// RECEIVE MESSAGE (personal)
 socket.on("receiveMessage", data => {
   const p = document.createElement("p");
   p.innerText = "Them: " + data.message;

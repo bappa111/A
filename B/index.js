@@ -2,12 +2,15 @@ require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const path = require("path");
 const connectDB = require("./config/db");
 
 const app = express();
-const path = require("path");
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
 
 connectDB();
 
@@ -18,9 +21,9 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/posts", require("./routes/post"));
 app.use("/api/users", require("./routes/users"));
+app.use("/api/chat", require("./routes/chat"));
 
 require("./socket/socket")(io);
 
-server.listen(process.env.PORT, () =>
-  console.log("Server running")
-);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log("Server running"));
