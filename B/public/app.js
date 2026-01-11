@@ -16,7 +16,7 @@ async function register() {
 
 // LOGIN
 async function login() {
-  const res = await fetch(API + "/api/auth/login", {
+  const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -24,8 +24,12 @@ async function login() {
       password: lpass.value
     })
   });
+
   const data = await res.json();
+
   localStorage.setItem("token", data.token);
+  localStorage.setItem("myName", data.name); // 👈 এটা add করো
+
   location.href = "feed.html";
 }
 
