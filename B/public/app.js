@@ -1,12 +1,20 @@
 const API = "https://a-kisk.onrender.com";
+
 let token = localStorage.getItem("token");
 let currentUser = null;
-let socket;
+let socket = null;
 
-// LOGIN
+/* ======================
+   LOGIN
+====================== */
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Email & password required");
+    return;
+  }
 
   const res = await fetch(API + "/api/auth/login", {
     method: "POST",
@@ -15,15 +23,28 @@ async function login() {
   });
 
   const data = await res.json();
+
+  if (!data.token) {
+    alert("Login failed");
+    return;
+  }
+
   localStorage.setItem("token", data.token);
-  location.href = "chat.html";
+  token = data.token; // 🔥 IMPORTANT FIX
+
+  window.location.href = "chat.html";
 }
 
-// LOAD USERS
+/* ======================
+   LOAD USERS
+====================== */
 async function loadUsers() {
   const res = await fetch(API + "/api/users", {
-    headers: { Authorization: "Bearer " + token }
+    headers: {
+      Authorization: "Bearer " + token
+    }
   });
+
   const users = await res.json();
 
   const ul = document.getElementById("users");
@@ -32,29 +53,63 @@ async function loadUsers() {
   users.forEach(u => {
     const li = document.createElement("li");
     li.innerText = u.name + (u.isOnline ? " 🟢" : " 🔴");
+    li.style.cursor = "pointer";
     li.onclick = () => openChat(u);
     ul.appendChild(li);
   });
 }
 
+/* ======================
+   OPEN CHAT
+====================== */
 function openChat(user) {
   currentUser = user;
-  document.getElementById("chatWith").innerText = "Chat with " + user.name;
+  document.getElementById("chatWith").innerText =
+    "Chat with " + user.name;
   loadMessages();
 }
 
+/* ======================
+   LOAD MESSAGES
+====================== */
 async function loadMessages() {
-  const res = await fetch(API + "/api/messages/" + currentUser._id, {
-    headers: { Authorization: "Bearer " + token }
-  });
+  if (!currentUser) return;
+
+  const res = await fetch(
+    API + "/api/messages/" + currentUser._id,
+    {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    }
+  );
+
   const msgs = await res.json();
 
   const box = document.getElementById("messages");
   box.innerHTML = "";
-  msgs.forEach(m => box.innerHTML += `<p>${m.message}</p>`);
+
+  msgs.forEach(m => {
+    const p = document.createElement("p");
+    p.innerText = m.message;
+    box.appendChild(p);
+  });
 }
 
+/* ======================
+   SEND MESSAGE
+====================== */
 async function sendMessage() {
+  if (!currentUser) {
+    alert("Select a user first");
+    return;
+  }
+
+  const msgInput = document.getElementById("msg");
+  const text = msgInput.value.trim();
+
+  if (!text) return;
+
   await fetch(API + "/api/messages", {
     method: "POST",
     headers: {
@@ -63,20 +118,32 @@ async function sendMessage() {
     },
     body: JSON.stringify({
       receiverId: currentUser._id,
-      message: msg.value
+      message: text
     })
   });
-  msg.value = "";
+
+  msgInput.value = "";
   loadMessages();
 }
 
-// SOCKET
-if (location.pathname.includes("chat")) {
-  const userId = JSON.parse(atob(token.split(".")[1])).id;
+/* ======================
+   SOCKET (REAL-TIME)
+====================== */
+if (token && window.location.pathname.includes("chat")) {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  const userId = payload.id;
 
-  socket = io(API, { query: { userId } });
-  socket.on("online-users", loadUsers);
-  socket.on("private-message", loadMessages);
+  socket = io(API, {
+    query: { userId }
+  });
+
+  socket.on("online-users", () => {
+    loadUsers();
+  });
+
+  socket.on("private-message", () => {
+    loadMessages();
+  });
 
   loadUsers();
 }

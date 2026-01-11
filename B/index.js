@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
@@ -8,22 +9,39 @@ const connectDB = require("./config/db");
 const app = express();
 const server = http.createServer(app);
 
+/* ======================
+   DATABASE
+====================== */
 connectDB();
 
+/* ======================
+   MIDDLEWARE
+====================== */
 app.use(cors());
 app.use(express.json());
 
+/* ======================
+   SERVE FRONTEND (CRITICAL)
+====================== */
+app.use(express.static(path.join(__dirname, "public")));
+
+/* ======================
+   API ROUTES
+====================== */
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/posts", require("./routes/postRoutes"));
 
+/* ======================
+   SOCKET
+====================== */
 const { initSocket } = require("./socket/socket");
 initSocket(server);
-const path = require("path");
 
-app.use(express.static(path.join(__dirname, "public")));
-
+/* ======================
+   SERVER START
+====================== */
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
