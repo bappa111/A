@@ -1,11 +1,22 @@
 const socket = io();
-const API = "";
-
+let currentUserId = null;
 const token = localStorage.getItem("token");
 
-// Load old messages
-async function loadChat() {
-  const userId = receiverId.value;
+// Load users
+async function loadUsers() {
+  const res = await fetch("/api/users", {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+  const users = await res.json();
+  usersDiv.innerHTML = users.map(u =>
+    `<button onclick="openChat('${u._id}')">${u.name}</button><br>`
+  ).join("");
+}
+
+async function openChat(userId) {
+  currentUserId = userId;
   const res = await fetch(`/api/chat/${userId}`, {
     headers: {
       "Authorization": "Bearer " + token
@@ -17,14 +28,10 @@ async function loadChat() {
   ).join("");
 }
 
-// Send message
 async function sendMessage() {
-  const text = msg.value;
-  const userId = receiverId.value;
+  if (!currentUserId) return alert("Select a user");
 
-  socket.emit("sendMessage", {
-    message: text
-  });
+  const text = msg.value;
 
   await fetch("/api/chat/send", {
     method: "POST",
@@ -33,16 +40,18 @@ async function sendMessage() {
       "Authorization": "Bearer " + token
     },
     body: JSON.stringify({
-      receiverId: userId,
+      receiverId: currentUserId,
       message: text
     })
   });
 
+  socket.emit("sendMessage", { message: text });
   msg.value = "";
-  loadChat();
+  openChat(currentUserId);
 }
 
-// Receive real-time message
 socket.on("receiveMessage", data => {
   messages.innerHTML += `<p><b>Them:</b> ${data.message}</p>`;
 });
+
+loadUsers();
