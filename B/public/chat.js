@@ -1,38 +1,74 @@
 const socket = io();
-const usersDiv = document.getElementById("users");
-let currentUserId = null;
-const token = localStorage.getItem("token");
 
-// Load users
+// DOM
+const usersDiv = document.getElementById("users");
+const messagesDiv = document.getElementById("messages");
+const msgInput = document.getElementById("msg");
+
+// TOKEN
+const token = localStorage.getItem("token");
+if (!token) {
+  alert("Please login first");
+  window.location.href = "/";
+}
+
+// STATE
+let currentUserId = null;
+
+// LOAD USERS
 async function loadUsers() {
   const res = await fetch("/api/users", {
     headers: {
       "Authorization": "Bearer " + token
     }
   });
+
+  console.log("USERS STATUS:", res.status);
+
   const users = await res.json();
-  usersDiv.innerHTML = users.map(u =>
-    `<button onclick="openChat('${u._id}')">${u.name}</button><br>`
-  ).join("");
+  console.log("USERS DATA:", users);
+
+  usersDiv.innerHTML = "";
+
+  users.forEach(u => {
+    const btn = document.createElement("button");
+    btn.innerText = u.name;
+    btn.onclick = () => openChat(u._id);
+    usersDiv.appendChild(btn);
+    usersDiv.appendChild(document.createElement("br"));
+  });
 }
 
+// OPEN CHAT
 async function openChat(userId) {
   currentUserId = userId;
+
   const res = await fetch(`/api/chat/${userId}`, {
     headers: {
       "Authorization": "Bearer " + token
     }
   });
+
   const chats = await res.json();
-  messages.innerHTML = chats.map(c =>
-    `<p><b>${c.senderId === userId ? "Them" : "Me"}:</b> ${c.message}</p>`
-  ).join("");
+  messagesDiv.innerHTML = "";
+
+  chats.forEach(c => {
+    const p = document.createElement("p");
+    p.innerText =
+      (c.senderId === userId ? "Them: " : "Me: ") + c.message;
+    messagesDiv.appendChild(p);
+  });
 }
 
+// SEND MESSAGE
 async function sendMessage() {
-  if (!currentUserId) return alert("Select a user");
+  if (!currentUserId) {
+    alert("Select a user");
+    return;
+  }
 
-  const text = msg.value;
+  const text = msgInput.value;
+  if (!text) return;
 
   await fetch("/api/chat/send", {
     method: "POST",
@@ -47,12 +83,16 @@ async function sendMessage() {
   });
 
   socket.emit("sendMessage", { message: text });
-  msg.value = "";
+  msgInput.value = "";
   openChat(currentUserId);
 }
 
+// SOCKET RECEIVE
 socket.on("receiveMessage", data => {
-  messages.innerHTML += `<p><b>Them:</b> ${data.message}</p>`;
+  const p = document.createElement("p");
+  p.innerText = "Them: " + data.message;
+  messagesDiv.appendChild(p);
 });
 
+// INIT
 loadUsers();
