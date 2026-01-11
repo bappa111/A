@@ -1,31 +1,46 @@
+// ======================
 // SOCKET
+// ======================
 const socket = io();
 
-// TOKEN
+// ======================
+// TOKEN & USER
+// ======================
 const token = localStorage.getItem("token");
 if (!token) {
   alert("Please login first");
   window.location.href = "/";
 }
 
-// Decode my user id
 const myId = JSON.parse(atob(token.split(".")[1])).id;
 
-// join my room
+// join my personal room
 socket.emit("join", myId);
 
+// ======================
 // DOM
+// ======================
 const usersDiv = document.getElementById("users");
 const messagesDiv = document.getElementById("messages");
+const chatWithTitle = document.getElementById("chatWith");
 const msgInput = document.getElementById("msg");
 
+// ======================
 // STATE
+// ======================
 let currentUserId = null;
 let onlineUserIds = [];
 
-/* ======================
-   LOAD USERS
-====================== */
+// ======================
+// HELPERS
+// ======================
+function scrollToBottom() {
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// ======================
+// LOAD USERS
+// ======================
 async function loadUsers() {
   const res = await fetch("/api/users", {
     headers: { Authorization: "Bearer " + token }
@@ -40,9 +55,10 @@ async function loadUsers() {
     const btn = document.createElement("button");
     btn.innerText = u.name;
     btn.dataset.id = u._id;
-    btn.style.background = "lightgray"; // default offline
+    btn.style.background = "lightgray"; // offline default
+    btn.style.border = "1px solid black";
 
-    btn.onclick = () => openChat(u._id);
+    btn.onclick = () => openChat(u._id, u.name);
 
     usersDiv.appendChild(btn);
     usersDiv.appendChild(document.createElement("br"));
@@ -51,14 +67,30 @@ async function loadUsers() {
   updateUserStatus();
 }
 
-/* ======================
-   OPEN CHAT
-====================== */
-async function openChat(userId) {
+// ======================
+// OPEN CHAT
+// ======================
+async function openChat(userId, userName) {
   currentUserId = userId;
   messagesDiv.innerHTML = "";
 
+  // reset borders
+  document.querySelectorAll("#users button").forEach(btn => {
+    btn.style.border = "1px solid black";
+  });
+
+  chatWithTitle.innerText = "Chat with: " + userName;
+
+  const activeBtn = document.querySelector(
+    `#users button[data-id="${userId}"]`
+  );
+  if (activeBtn) {
+    activeBtn.style.border = "2px solid blue";
+  }
+
+  // persist last chat
   localStorage.setItem("lastChatUser", userId);
+  localStorage.setItem("lastChatUserName", userName);
 
   const res = await fetch(`/api/chat/${userId}`, {
     headers: { Authorization: "Bearer " + token }
@@ -72,11 +104,13 @@ async function openChat(userId) {
       (c.senderId === myId ? "Me: " : "Them: ") + c.message;
     messagesDiv.appendChild(p);
   });
+
+  scrollToBottom();
 }
 
-/* ======================
-   SEND MESSAGE
-====================== */
+// ======================
+// SEND MESSAGE
+// ======================
 async function sendMessage() {
   if (!currentUserId) {
     alert("Select a user");
@@ -90,6 +124,7 @@ async function sendMessage() {
   const p = document.createElement("p");
   p.innerText = "Me: " + text;
   messagesDiv.appendChild(p);
+  scrollToBottom();
 
   await fetch("/api/chat/send", {
     method: "POST",
@@ -112,42 +147,51 @@ async function sendMessage() {
   msgInput.value = "";
 }
 
-/* ======================
-   RECEIVE MESSAGE
-====================== */
+// ======================
+// RECEIVE MESSAGE
+// ======================
 socket.on("receiveMessage", data => {
   if (data.senderId !== currentUserId) return;
 
   const p = document.createElement("p");
   p.innerText = "Them: " + data.message;
   messagesDiv.appendChild(p);
+  scrollToBottom();
 });
 
-/* ======================
-   ONLINE / OFFLINE
-====================== */
+// ======================
+// ONLINE / OFFLINE
+// ======================
 socket.on("onlineUsers", users => {
   onlineUserIds = users;
   updateUserStatus();
+  setTimeout(updateUserStatus, 100); // race-condition safe
 });
 
 function updateUserStatus() {
   document.querySelectorAll("#users button").forEach(btn => {
     const uid = btn.dataset.id;
-    if (onlineUserIds.includes(uid)) {
-      btn.style.background = "lightgreen"; // online
-    } else {
-      btn.style.background = "lightgray"; // offline
+
+    btn.style.background = onlineUserIds.includes(uid)
+      ? "lightgreen"
+      : "lightgray";
+
+    if (uid === currentUserId) {
+      btn.style.border = "2px solid blue";
     }
   });
 }
 
-/* ======================
-   INIT
-====================== */
+// ======================
+// INIT
+// ======================
 loadUsers();
 
 const lastChatUser = localStorage.getItem("lastChatUser");
-if (lastChatUser) {
-  openChat(lastChatUser);
+const lastChatUserName = localStorage.getItem("lastChatUserName");
+
+if (lastChatUser && lastChatUserName) {
+  setTimeout(() => {
+    openChat(lastChatUser, lastChatUserName);
+  }, 200);
 }
