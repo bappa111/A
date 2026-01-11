@@ -1,4 +1,5 @@
 const socket = io();
+const usersDiv = document.getElementById("users");
 let currentUserId = null;
 const token = localStorage.getItem("token");
 
