@@ -1,18 +1,30 @@
+const onlineUsers = {};
+
 module.exports = (io) => {
   io.on("connection", (socket) => {
-    console.log("Socket connected:", socket.id);
 
     socket.on("join", (userId) => {
-      console.log("JOIN room:", userId);
+      onlineUsers[userId] = socket.id;
       socket.join(userId);
+      io.emit("onlineUsers", Object.keys(onlineUsers));
     });
 
     socket.on("sendMessage", ({ receiverId, senderId, message }) => {
-      console.log("SEND", senderId, "->", receiverId, message);
       io.to(receiverId).emit("receiveMessage", {
         senderId,
         message
       });
     });
+
+    socket.on("disconnect", () => {
+      for (const id in onlineUsers) {
+        if (onlineUsers[id] === socket.id) {
+          delete onlineUsers[id];
+          break;
+        }
+      }
+      io.emit("onlineUsers", Object.keys(onlineUsers));
+    });
+
   });
 };
