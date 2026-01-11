@@ -1,7 +1,7 @@
-const API = "https://a-kisk.onrender.com/";
+const API = "https://a-kisk.onrender.com";
 let token = localStorage.getItem("token");
-let currentChatUser = null;
-let socket = null;
+let currentUser = null;
+let socket;
 
 // LOGIN
 async function login() {
@@ -16,7 +16,7 @@ async function login() {
 
   const data = await res.json();
   localStorage.setItem("token", data.token);
-  window.location = "chat.html";
+  location.href = "chat.html";
 }
 
 // LOAD USERS
@@ -24,8 +24,8 @@ async function loadUsers() {
   const res = await fetch(API + "/api/users", {
     headers: { Authorization: "Bearer " + token }
   });
-
   const users = await res.json();
+
   const ul = document.getElementById("users");
   ul.innerHTML = "";
 
@@ -37,29 +37,24 @@ async function loadUsers() {
   });
 }
 
-// OPEN CHAT
 function openChat(user) {
-  currentChatUser = user;
+  currentUser = user;
   document.getElementById("chatWith").innerText = "Chat with " + user.name;
   loadMessages();
 }
 
-// LOAD MESSAGES
 async function loadMessages() {
-  const res = await fetch(API + "/api/messages/" + currentChatUser._id, {
+  const res = await fetch(API + "/api/messages/" + currentUser._id, {
     headers: { Authorization: "Bearer " + token }
   });
   const msgs = await res.json();
+
   const box = document.getElementById("messages");
   box.innerHTML = "";
-  msgs.forEach(m => {
-    box.innerHTML += `<p>${m.message}</p>`;
-  });
+  msgs.forEach(m => box.innerHTML += `<p>${m.message}</p>`);
 }
 
-// SEND MESSAGE
 async function sendMessage() {
-  const message = document.getElementById("msg").value;
   await fetch(API + "/api/messages", {
     method: "POST",
     headers: {
@@ -67,22 +62,21 @@ async function sendMessage() {
       Authorization: "Bearer " + token
     },
     body: JSON.stringify({
-      receiverId: currentChatUser._id,
-      message
+      receiverId: currentUser._id,
+      message: msg.value
     })
   });
-  document.getElementById("msg").value = "";
+  msg.value = "";
   loadMessages();
 }
 
-// SOCKET CONNECT
-if (token && location.pathname.includes("chat")) {
-  socket = io(API, {
-    query: { userId: JSON.parse(atob(token.split(".")[1])).id }
-  });
+// SOCKET
+if (location.pathname.includes("chat")) {
+  const userId = JSON.parse(atob(token.split(".")[1])).id;
 
-  socket.on("online-users", () => loadUsers());
-  socket.on("private-message", () => loadMessages());
+  socket = io(API, { query: { userId } });
+  socket.on("online-users", loadUsers);
+  socket.on("private-message", loadMessages);
 
   loadUsers();
 }

@@ -20,6 +20,9 @@ app.use("/api/posts", require("./routes/postRoutes"));
 
 const { initSocket } = require("./socket/socket");
 initSocket(server);
+const path = require("path");
+
+app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
