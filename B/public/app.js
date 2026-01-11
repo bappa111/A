@@ -175,39 +175,40 @@ async function sendMessage() {
    SEND IMAGE
 ====================== */
 async function sendImage() {
-  if (!currentUser) {
-    alert("Select a user first");
-    return;
+  if (!currentUser) return;
+
+  try {
+    const input = document.getElementById("imageInput");
+    const file = input.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const uploadRes = await fetch(API + "/api/media/image", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await uploadRes.json();
+
+    await fetch(API + "/api/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({
+        receiverId: currentUser._id,
+        image: data.imageUrl
+      })
+    });
+
+    input.value = "";
+    loadMessages();
+  } catch (err) {
+    alert("Image send failed");
   }
-
-  const input = document.getElementById("imageInput");
-  const file = input.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const uploadRes = await fetch(API + "/api/media/image", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await uploadRes.json();
-
-  await fetch(API + "/api/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      receiverId: currentUser._id,
-      image: data.imageUrl
-    })
-  });
-
-  input.value = "";
-  loadMessages();
 }
 
 /* ======================
