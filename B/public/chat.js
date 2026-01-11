@@ -13,10 +13,13 @@ if (!token) {
 }
 
 const myId = JSON.parse(atob(token.split(".")[1])).id;
-
-// join my personal room
-socket.emit("join", myId);
-
+//===================
+//socket
+//===================
+   socket.on("connect", () => {
+     console.log("Socket connected on client:", socket.id);
+   socket.emit("join", myId);
+   });
 // ======================
 // DOM
 // ======================
