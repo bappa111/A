@@ -1,30 +1,45 @@
-const onlineUsers = {};
+const socketio = require("socket.io");
+const Message = require("../models/Message");
+const User = require("../models/User");
 
-module.exports = (io) => {
-  io.on("connection", (socket) => {
+const onlineUsers = new Map();
 
-    socket.on("join", (userId) => {
-      onlineUsers[userId] = socket.id;
-      socket.join(userId);
-      io.emit("onlineUsers", Object.keys(onlineUsers));
-    });
+const initSocket = (server) => {
+  const io = socketio(server, {
+    cors: { origin: "*" }
+  });
 
-    socket.on("sendMessage", ({ receiverId, senderId, message }) => {
-      io.to(receiverId).emit("receiveMessage", {
-        senderId,
+  io.on("connection", async (socket) => {
+    const userId = socket.handshake.query.userId;
+
+    if (userId) {
+      onlineUsers.set(userId, socket.id);
+      await User.findByIdAndUpdate(userId, { isOnline: true });
+      io.emit("online-users", [...onlineUsers.keys()]);
+    }
+
+    socket.on("private-message", async ({ to, message }) => {
+      const msg = await Message.create({
+        senderId: userId,
+        receiverId: to,
         message
       });
-    });
 
-    socket.on("disconnect", () => {
-      for (const id in onlineUsers) {
-        if (onlineUsers[id] === socket.id) {
-          delete onlineUsers[id];
-          break;
-        }
+      const targetSocket = onlineUsers.get(to);
+      if (targetSocket) {
+        io.to(targetSocket).emit("private-message", msg);
       }
-      io.emit("onlineUsers", Object.keys(onlineUsers));
     });
 
+    socket.on("disconnect", async () => {
+      onlineUsers.delete(userId);
+      await User.findByIdAndUpdate(userId, {
+        isOnline: false,
+        lastSeen: new Date()
+      });
+      io.emit("online-users", [...onlineUsers.keys()]);
+    });
   });
 };
+
+module.exports = { initSocket };
