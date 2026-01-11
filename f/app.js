@@ -1,4 +1,4 @@
-const API = "http://localhost:9000";
+const API = "https://a-kisk.onrender.com/";
 let token = localStorage.getItem("token");
 let currentChatUser = null;
 let socket = null;
