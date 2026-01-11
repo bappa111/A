@@ -32,12 +32,14 @@ const initSocket = (server) => {
     });
 
     socket.on("disconnect", async () => {
-      onlineUsers.delete(userId);
-      await User.findByIdAndUpdate(userId, {
-        isOnline: false,
-        lastSeen: new Date()
-      });
-      io.emit("online-users", [...onlineUsers.keys()]);
+      if (userId) {
+        onlineUsers.delete(userId);
+        await User.findByIdAndUpdate(userId, {
+          isOnline: false,
+          lastSeen: new Date()
+        });
+        io.emit("online-users", [...onlineUsers.keys()]);
+      }
     });
   });
 };

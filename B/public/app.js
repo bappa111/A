@@ -5,6 +5,35 @@ let currentUser = null;
 let socket = null;
 
 /* ======================
+   REGISTER
+====================== */
+async function register() {
+  const name = document.getElementById("name").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if (!name || !email || !password) {
+    alert("All fields required");
+    return;
+  }
+
+  const res = await fetch(API + "/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.msg === "Registered") {
+    alert("Registered successfully. Login now.");
+    window.location.href = "index.html";
+  } else {
+    alert(data.msg || "Register failed");
+  }
+}
+
+/* ======================
    LOGIN
 ====================== */
 async function login() {
@@ -64,6 +93,7 @@ async function loadUsers() {
 ====================== */
 function openChat(user) {
   currentUser = user;
+  localStorage.setItem("lastChatUser", JSON.stringify(user));
   document.getElementById("chatWith").innerText =
     "Chat with " + user.name;
   loadMessages();
