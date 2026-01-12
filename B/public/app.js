@@ -131,7 +131,7 @@ async function loadMessages() {
     // ✅ IMAGE MESSAGE (new system safe)
     if (m.image) {
       const img = document.createElement("img");
-      img.src = API + m.image;
+      img.src = m.image;
       img.style.maxWidth = "200px";
       img.style.display = "block";
       img.style.margin = "5px 0";

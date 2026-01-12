@@ -24,7 +24,7 @@ app.use(express.json());
    SERVE FRONTEND + UPLOADS
 ====================== */
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 /* ======================
    MEDIA ROUTES (IMAGE / FUTURE AUDIO)
