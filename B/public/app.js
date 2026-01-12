@@ -97,14 +97,15 @@ function openChat(user) {
 }
 
 /* ======================
-   LOAD MESSAGES (TEXT + IMAGE)
+   LOAD MESSAGES
 ====================== */
 async function loadMessages() {
   if (!currentUser) return;
 
-  const res = await fetch(API + "/api/messages/" + currentUser._id, {
-    headers: { Authorization: "Bearer " + token }
-  });
+  const res = await fetch(
+    API + "/api/messages/" + currentUser._id,
+    { headers: { Authorization: "Bearer " + token } }
+  );
 
   const msgs = await res.json();
   const box = document.getElementById("messages");
@@ -143,16 +144,14 @@ function openImage() {
 }
 
 /* ======================
-   IMAGE INPUT HANDLER (ONLY ONE)
+   IMAGE INPUT HANDLER
 ====================== */
 function handleImageChange(e) {
-  const input = e.target;
-  if (!input.files || !input.files[0]) return;
+  const file = e.target.files[0];
+  if (!file || !currentUser) return;
 
-  uploadImage(input.files[0]);
-
-  // allow same image again
-  input.value = "";
+  uploadImage(file);
+  e.target.value = ""; // allow same image again
 }
 
 /* ======================
@@ -188,14 +187,15 @@ async function sendMessage() {
    UPLOAD IMAGE (CLOUDINARY)
 ====================== */
 async function uploadImage(file) {
-  if (!currentUser) return;
-
   try {
     const formData = new FormData();
     formData.append("image", file);
 
     const uploadRes = await fetch(API + "/api/media/image", {
       method: "POST",
+      headers: {
+        Authorization: "Bearer " + token
+      },
       body: formData
     });
 
@@ -218,14 +218,6 @@ async function uploadImage(file) {
       })
     });
 
-    // realtime notify
-    if (socket) {
-      socket.emit("private-message", {
-        to: currentUser._id,
-        image: data.imageUrl
-      });
-    }
-
     loadMessages();
 
   } catch (err) {
@@ -235,7 +227,7 @@ async function uploadImage(file) {
 }
 
 /* ======================
-   SOCKET (REAL-TIME)
+   SOCKET (TEXT REALTIME ONLY)
 ====================== */
 if (token && window.location.pathname.includes("chat")) {
   const payload = JSON.parse(atob(token.split(".")[1]));
