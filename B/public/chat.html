@@ -12,18 +12,22 @@
 <input id="msg" placeholder="Message">
 <button onclick="sendMessage()">Send</button>
 
-<button onclick="toggleMenu()">⋮</button>
+
 
 <div id="mediaMenu" style="display:none; border:1px solid #ccc; padding:5px;">
   <button onclick="openImage()">📷 Image</button>
   <button disabled>🎙️ Voice (soon)</button>
 </div>
 
+<label for="imageInput" style="border:1px solid #999; padding:4px 8px; cursor:pointer;">
+  📷
+</label>
+
 <input
   type="file"
   id="imageInput"
   accept="image/*"
-  hidden
+  style="display:none"
   onchange="handleImageChange(event)">
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
