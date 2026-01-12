@@ -211,6 +211,7 @@ async function sendImage() {
     const formData = new FormData();
     formData.append("image", file);
 
+    // 1️⃣ upload image
     const uploadRes = await fetch(API + "/api/media/image", {
       method: "POST",
       body: formData
@@ -218,6 +219,7 @@ async function sendImage() {
 
     const data = await uploadRes.json();
 
+    // 2️⃣ save message in DB
     await fetch(API + "/api/messages", {
       method: "POST",
       headers: {
@@ -230,8 +232,20 @@ async function sendImage() {
       })
     });
 
+    // 3️⃣ realtime socket notify
+    if (socket) {
+      socket.emit("private-message", {
+        to: currentUser._id,
+        image: data.imageUrl
+      });
+    }
+
+    // 4️⃣ reset + reload
+    input.value = "";
     loadMessages();
+
   } catch (err) {
+    console.error(err);
     alert("Image send failed");
   }
 }
