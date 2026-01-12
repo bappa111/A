@@ -4,31 +4,21 @@ const cloudinary = require("../config/cloudinary");
 
 const router = express.Router();
 
-/* ======================
-   MULTER CONFIG
-   (memory only)
-====================== */
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files allowed"), false);
-    }
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files allowed"), false);
   }
 });
 
-/* ======================
-   IMAGE UPLOAD ROUTE
-====================== */
 router.post("/image", upload.single("image"), async (req, res) => {
-  // 🔍 TEMP DEBUG (only to confirm env)
-  console.log("Cloudinary ready:", cloudinary.config().cloud_name);
-
   try {
+    console.log("IMAGE ROUTE HIT");
+
     if (!req.file) {
+      console.log("NO FILE");
       return res.status(400).json({ msg: "No image uploaded" });
     }
 
@@ -39,13 +29,11 @@ router.post("/image", upload.single("image"), async (req, res) => {
       folder: "chat_images"
     });
 
-    return res.json({
-      imageUrl: result.secure_url
-    });
+    return res.json({ imageUrl: result.secure_url });
 
   } catch (err) {
-    console.error("Cloudinary error:", err);
-    return res.status(500).json({ msg: "Image upload failed" });
+    console.error("UPLOAD ERROR", err);
+    return res.status(500).json({ msg: "Upload failed" });
   }
 });
 

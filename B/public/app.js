@@ -60,7 +60,6 @@ async function login() {
 
   localStorage.setItem("token", data.token);
   token = data.token;
-
   window.location.href = "chat.html";
 }
 
@@ -79,7 +78,6 @@ async function loadUsers() {
   users.forEach(u => {
     const li = document.createElement("li");
     li.innerText = u.name + (u.isOnline ? " 🟢" : " 🔴");
-    li.style.cursor = "pointer";
     li.onclick = () => openChat(u);
     ul.appendChild(li);
   });
@@ -120,51 +118,36 @@ async function loadMessages() {
 
     if (m.image) {
       const img = document.createElement("img");
-      img.src = m.image; // Cloudinary full URL
+      img.src = m.image;
       img.style.maxWidth = "200px";
       img.style.display = "block";
-      img.style.margin = "5px 0";
       box.appendChild(img);
     }
   });
 }
 
 /* ======================
-   3 DOT MENU
-====================== */
-function toggleMenu() {
-  const menu = document.getElementById("mediaMenu");
-  menu.style.display =
-    menu.style.display === "block" ? "none" : "block";
-}
-
-function openImage() {
-  document.getElementById("imageInput").click();
-  document.getElementById("mediaMenu").style.display = "none";
-}
-
-/* ======================
-   IMAGE INPUT HANDLER
+   IMAGE PICK HANDLER
 ====================== */
 function handleImageChange(e) {
   const file = e.target.files[0];
-  if (!file || !currentUser) return;
-
-  uploadImage(file);
-  e.target.value = ""; // allow same image again
-}
-
-/* ======================
-   SEND TEXT MESSAGE
-====================== */
-async function sendMessage() {
-  if (!currentUser) {
-    alert("Select a user first");
+  if (!file) {
+    alert("❌ No file picked");
     return;
   }
 
-  const msgInput = document.getElementById("msg");
-  const text = msgInput.value.trim();
+  alert("✅ File picked: " + file.name);
+  uploadImage(file);
+  e.target.value = "";
+}
+
+/* ======================
+   SEND TEXT
+====================== */
+async function sendMessage() {
+  if (!currentUser) return;
+
+  const text = msg.value.trim();
   if (!text) return;
 
   await fetch(API + "/api/messages", {
@@ -179,30 +162,31 @@ async function sendMessage() {
     })
   });
 
-  msgInput.value = "";
+  msg.value = "";
   loadMessages();
 }
 
 /* ======================
-   UPLOAD IMAGE (CLOUDINARY)
+   UPLOAD IMAGE
 ====================== */
 async function uploadImage(file) {
+  alert("⬆️ Uploading image...");
+
   try {
     const formData = new FormData();
     formData.append("image", file);
 
     const uploadRes = await fetch(API + "/api/media/image", {
       method: "POST",
-      headers: {
-        Authorization: "Bearer " + token
-      },
+      headers: { Authorization: "Bearer " + token },
       body: formData
     });
 
     const data = await uploadRes.json();
+    console.log("UPLOAD RESPONSE:", data);
 
     if (!data.imageUrl) {
-      alert("Image upload failed");
+      alert("❌ Upload failed (no URL)");
       return;
     }
 
@@ -218,22 +202,21 @@ async function uploadImage(file) {
       })
     });
 
+    alert("✅ Image sent");
     loadMessages();
 
   } catch (err) {
     console.error(err);
-    alert("Image send failed");
+    alert("❌ Image send failed");
   }
 }
 
 /* ======================
-   SOCKET (TEXT REALTIME ONLY)
+   SOCKET
 ====================== */
-if (token && window.location.pathname.includes("chat")) {
+if (token && location.pathname.includes("chat")) {
   const payload = JSON.parse(atob(token.split(".")[1]));
-  const userId = payload.id;
-
-  socket = io(API, { query: { userId } });
+  socket = io(API, { query: { userId: payload.id } });
 
   socket.on("online-users", loadUsers);
   socket.on("private-message", loadMessages);
@@ -241,7 +224,5 @@ if (token && window.location.pathname.includes("chat")) {
   loadUsers();
 
   const last = localStorage.getItem("lastChatUser");
-  if (last) {
-    openChat(JSON.parse(last));
-  }
+  if (last) openChat(JSON.parse(last));
 }
