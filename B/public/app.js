@@ -140,6 +140,31 @@ async function loadMessages() {
 
   });
 }
+/* ======================
+   3 DOT MENU
+====================== */
+function toggleMenu() {
+  const menu = document.getElementById("mediaMenu");
+  menu.style.display = menu.style.display === "none" ? "block" : "none";
+}
+
+function openImage() {
+  document.getElementById("imageInput").click();
+  document.getElementById("mediaMenu").style.display = "none";
+}
+/* ======================
+   IMAGE INPUT HANDLER
+====================== */
+function handleImageChange(e) {
+  const input = e.target;
+
+  if (!input.files || !input.files[0]) return;
+
+  sendImage();
+
+  // 🔁 allow same image to be sent again
+  input.value = "";
+}
 
 /* ======================
    SEND TEXT MESSAGE
