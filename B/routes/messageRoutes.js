@@ -4,29 +4,44 @@ const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Send message
+/* ======================
+   SEND MESSAGE (TEXT / IMAGE)
+====================== */
 router.post("/", auth, async (req, res) => {
-  const { receiverId, message } = req.body;
+  try {
+    const { receiverId, message, image } = req.body;
 
-  const msg = await Message.create({
-    senderId: req.user.id,
-    receiverId,
-    message
-  });
+    const msg = await Message.create({
+      sender: req.user.id,      // ✅ FIXED
+      receiver: receiverId,     // ✅ FIXED
+      message: message || null,
+      image: image || null
+    });
 
-  res.json(msg);
+    res.json(msg);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Message send failed" });
+  }
 });
 
-// Get chat history
+/* ======================
+   GET CHAT HISTORY
+====================== */
 router.get("/:userId", auth, async (req, res) => {
-  const messages = await Message.find({
-    $or: [
-      { senderId: req.user.id, receiverId: req.params.userId },
-      { senderId: req.params.userId, receiverId: req.user.id }
-    ]
-  }).sort({ createdAt: 1 });
+  try {
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user.id, receiver: req.params.userId },
+        { sender: req.params.userId, receiver: req.user.id }
+      ]
+    }).sort({ createdAt: 1 });
 
-  res.json(messages);
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Failed to load messages" });
+  }
 });
 
 module.exports = router;
