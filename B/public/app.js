@@ -199,19 +199,22 @@ async function sendMessage() {
 
 /* ======================
    SEND IMAGE
-====================== */
-async function sendImage() {
-  if (!currentUser) return;
+===================== */
+function handleImageChange(e) {
+  const file = e.target.files[0];
+  if (!file || !currentUser) return;
 
+  uploadImage(file);
+
+  // same image again allow
+  e.target.value = "";
+}
+
+async function uploadImage(file) {
   try {
-    const input = document.getElementById("imageInput");
-    const file = input.files[0];
-    if (!file) return;
-
     const formData = new FormData();
     formData.append("image", file);
 
-    // 1️⃣ upload image
     const uploadRes = await fetch(API + "/api/media/image", {
       method: "POST",
       body: formData
@@ -219,7 +222,11 @@ async function sendImage() {
 
     const data = await uploadRes.json();
 
-    // 2️⃣ save message in DB
+    if (!data.imageUrl) {
+      alert("Upload failed");
+      return;
+    }
+
     await fetch(API + "/api/messages", {
       method: "POST",
       headers: {
@@ -232,7 +239,7 @@ async function sendImage() {
       })
     });
 
-    // 3️⃣ realtime socket notify
+    // realtime notify
     if (socket) {
       socket.emit("private-message", {
         to: currentUser._id,
@@ -240,8 +247,6 @@ async function sendImage() {
       });
     }
 
-    // 4️⃣ reset + reload
-    input.value = "";
     loadMessages();
 
   } catch (err) {
@@ -249,7 +254,7 @@ async function sendImage() {
     alert("Image send failed");
   }
 }
-
+ 
 /* ======================
    SOCKET (REAL-TIME)
 ====================== */

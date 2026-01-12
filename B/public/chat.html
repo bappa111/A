@@ -19,11 +19,12 @@
   <button disabled>🎙️ Voice (soon)</button>
 </div>
 
-<input type="file"
-       id="imageInput"
-       accept="image/*"
-       style="display:none"
-       onchange="handleImageChange(event)">
+<input
+  type="file"
+  id="imageInput"
+  accept="image/*"
+  hidden
+  onchange="handleImageChange(event)">
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="app.js"></script>
