@@ -145,7 +145,8 @@ async function loadMessages() {
 ====================== */
 function toggleMenu() {
   const menu = document.getElementById("mediaMenu");
-  menu.style.display = menu.style.display === "none" ? "block" : "none";
+  menu.style.display =
+    menu.style.display === "block" ? "none" : "block";
 }
 
 function openImage() {
@@ -229,7 +230,6 @@ async function sendImage() {
       })
     });
 
-    input.value = "";
     loadMessages();
   } catch (err) {
     alert("Image send failed");
