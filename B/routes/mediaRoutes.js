@@ -1,4 +1,3 @@
-
 const express = require("express");
 const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
@@ -7,7 +6,7 @@ const router = express.Router();
 
 /* ======================
    MULTER CONFIG
-   (memory only, no disk)
+   (memory only)
 ====================== */
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -25,6 +24,9 @@ const upload = multer({
    IMAGE UPLOAD ROUTE
 ====================== */
 router.post("/image", upload.single("image"), async (req, res) => {
+  // 🔍 TEMP DEBUG (only to confirm env)
+  console.log("Cloudinary ready:", cloudinary.config().cloud_name);
+
   try {
     if (!req.file) {
       return res.status(400).json({ msg: "No image uploaded" });
@@ -37,13 +39,13 @@ router.post("/image", upload.single("image"), async (req, res) => {
       folder: "chat_images"
     });
 
-    res.json({
+    return res.json({
       imageUrl: result.secure_url
     });
 
   } catch (err) {
     console.error("Cloudinary error:", err);
-    res.status(500).json({ msg: "Image upload failed" });
+    return res.status(500).json({ msg: "Image upload failed" });
   }
 });
 
