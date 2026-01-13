@@ -5,7 +5,7 @@ let currentUser = null;
 let socket = null;
 let selectedImageFile = null;
 
-let mediaRecorder;
+let mediaRecorder = null;
 let audioChunks = [];
 
 /* ======================
@@ -27,9 +27,6 @@ async function login() {
   });
 
   const data = await res.json();
-
-  // 🔍 DEBUG — very important
-  alert("LOGIN RESPONSE:\n" + JSON.stringify(data));
 
   if (!data.token) {
     alert("Login failed");
@@ -57,6 +54,7 @@ async function loadUsers() {
   users.forEach(u => {
     const li = document.createElement("li");
     li.innerText = u.name;
+    li.style.cursor = "pointer";
     li.onclick = () => openChat(u);
     ul.appendChild(li);
   });
@@ -97,6 +95,7 @@ async function loadMessages() {
       const img = document.createElement("img");
       img.src = m.image;
       img.style.maxWidth = "200px";
+      img.style.display = "block";
       box.appendChild(img);
     }
 
@@ -104,6 +103,7 @@ async function loadMessages() {
       const audio = document.createElement("audio");
       audio.src = m.voice;
       audio.controls = true;
+      audio.style.display = "block";
       box.appendChild(audio);
     }
   });
@@ -113,8 +113,11 @@ async function loadMessages() {
    SEND TEXT
 ====================== */
 async function sendMessage() {
-  const text = msg.value.trim();
-  if (!text || !currentUser) return;
+  if (!currentUser) return;
+
+  const msgInput = document.getElementById("msg");
+  const text = msgInput.value.trim();
+  if (!text) return;
 
   await fetch(API + "/api/messages", {
     method: "POST",
@@ -128,7 +131,7 @@ async function sendMessage() {
     })
   });
 
-  msg.value = "";
+  msgInput.value = "";
   loadMessages();
 }
 
@@ -137,7 +140,7 @@ async function sendMessage() {
 ====================== */
 function handleImageChange(e) {
   selectedImageFile = e.target.files[0];
-  if (!selectedImageFile) return;
+  if (!selectedImageFile || !currentUser) return;
   sendImage();
   e.target.value = "";
 }
@@ -146,8 +149,6 @@ function handleImageChange(e) {
    SEND IMAGE
 ====================== */
 async function sendImage() {
-  if (!selectedImageFile || !currentUser) return;
-
   const formData = new FormData();
   formData.append("image", selectedImageFile);
 
@@ -157,6 +158,10 @@ async function sendImage() {
   });
 
   const data = await uploadRes.json();
+  if (!data.imageUrl) {
+    alert("Image upload failed");
+    return;
+  }
 
   await fetch(API + "/api/messages", {
     method: "POST",
@@ -174,24 +179,42 @@ async function sendImage() {
 }
 
 /* ======================
-   VOICE RECORD
+   START VOICE RECORD
 ====================== */
 async function startVoice() {
-  if (!currentUser) return;
+  if (!currentUser) {
+    alert("Select user first");
+    return;
+  }
 
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  audioChunks = [];
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    alert("Voice not supported on this device");
+    return;
+  }
 
-  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-  mediaRecorder.onstop = uploadVoice;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
 
-  mediaRecorder.start();
-  alert("🎙️ Recording...");
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.onstop = uploadVoice;
+
+    mediaRecorder.start();
+    alert("🎙️ Recording started");
+  } catch (err) {
+    alert("Microphone permission denied");
+  }
 }
 
+/* ======================
+   STOP VOICE RECORD
+====================== */
 function stopVoice() {
-  if (mediaRecorder) mediaRecorder.stop();
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    alert("⏹️ Recording stopped");
+  }
 }
 
 /* ======================
@@ -208,6 +231,10 @@ async function uploadVoice() {
   });
 
   const data = await res.json();
+  if (!data.voiceUrl) {
+    alert("Voice upload failed");
+    return;
+  }
 
   await fetch(API + "/api/messages", {
     method: "POST",
@@ -227,13 +254,12 @@ async function uploadVoice() {
 /* ======================
    SOCKET
 ====================== */
-if (token) {
+if (token && location.pathname.includes("chat")) {
   let payload;
   try {
     payload = JSON.parse(atob(token.split(".")[1]));
-  } catch (e) {
+  } catch {
     localStorage.removeItem("token");
-    alert("Session expired, login again");
     location.href = "index.html";
   }
 

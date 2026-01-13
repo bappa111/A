@@ -5,9 +5,9 @@ const cloudinary = require("../config/cloudinary");
 const router = express.Router();
 
 /* ======================
-   IMAGE UPLOAD (image only)
+   IMAGE UPLOAD
 ====================== */
-const imageUpload = multer({
+const uploadImage = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -16,14 +16,16 @@ const imageUpload = multer({
   }
 });
 
-router.post("/image", imageUpload.single("image"), async (req, res) => {
+router.post("/image", uploadImage.single("image"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ msg: "No image uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ msg: "No image uploaded" });
+    }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: "chat_images"
-    });
+    const result = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      { folder: "chat_images" }
+    );
 
     res.json({ imageUrl: result.secure_url });
   } catch (err) {
@@ -33,23 +35,26 @@ router.post("/image", imageUpload.single("image"), async (req, res) => {
 });
 
 /* ======================
-   VOICE UPLOAD (audio only)
+   VOICE UPLOAD  ✅ FIXED
 ====================== */
-const voiceUpload = multer({
+const uploadAny = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-router.post("/voice", voiceUpload.single("voice"), async (req, res) => {
+router.post("/voice", uploadAny.single("voice"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ msg: "No voice uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ msg: "No voice file" });
+    }
 
-    const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-
-    const result = await cloudinary.uploader.upload(dataUri, {
-      resource_type: "video", // audio = video in Cloudinary
-      folder: "chat_voice"
-    });
+    const result = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      {
+        resource_type: "video", // 🔥 audio goes as video in cloudinary
+        folder: "chat_voice"
+      }
+    );
 
     res.json({ voiceUrl: result.secure_url });
   } catch (err) {
