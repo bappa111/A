@@ -126,6 +126,15 @@ async function loadMessages() {
       img.style.margin = "5px 0";
       box.appendChild(img);
     }
+    if (m.voice) {
+      const audio = document.createElement("audio");
+      audio.src = m.voice;
+      audio.controls = true;
+      audio.style.display = "block";
+      audio.style.margin = "5px 0";
+      box.appendChild(audio);
+    }
+
   });
 }
 
@@ -301,6 +310,77 @@ if (m.voice) {
   audio.controls = true;
   box.appendChild(audio);
 }
+}
+/*==================
+       voice
+==================*/
+let mediaRecorder;
+let audioChunks = [];
+
+// 🎙️ Start recording
+async function startVoice() {
+  if (!currentUser) {
+    alert("Select user first");
+    return;
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+
+  audioChunks = [];
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+  mediaRecorder.onstop = async () => {
+    const blob = new Blob(audioChunks, { type: "audio/webm" });
+    sendVoice(blob);
+  };
+
+  mediaRecorder.start();
+  alert("🎙️ Recording started");
+}
+
+// ⏹️ Stop recording
+function stopVoice() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    alert("⏹️ Recording stopped");
+  }
+}
+
+// ⬆️ Upload voice
+async function sendVoice(blob) {
+  alert("⬆️ Uploading voice...");
+
+  const formData = new FormData();
+  formData.append("voice", blob, "voice.webm");
+
+  const uploadRes = await fetch(API + "/api/media/voice", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token },
+    body: formData
+  });
+
+  const data = await uploadRes.json();
+
+  if (!data.voiceUrl) {
+    alert("❌ Voice upload failed");
+    return;
+  }
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      voice: data.voiceUrl
+    })
+  });
+
+  alert("✅ Voice sent");
+  loadMessages();
 }
 
 /* ======================
