@@ -25,6 +25,11 @@ const MessageSchema = new mongoose.Schema(
       type: String,
       default: null
     }
+    // 🔹 VOICE MESSAGE
+    voice: {
+      type: String,
+      default: null
+    }
   },
   { timestamps: true }
 );

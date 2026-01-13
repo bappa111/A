@@ -37,4 +37,24 @@ router.post("/image", upload.single("image"), async (req, res) => {
   }
 });
 
+// ======================
+// VOICE UPLOAD
+// ======================
+router.post("/voice", upload.single("voice"), async (req, res) => {
+  try {
+    const base64 = req.file.buffer.toString("base64");
+    const dataUri = `data:${req.file.mimetype};base64,${base64}`;
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+      resource_type: "video", // audio = video in cloudinary
+      folder: "chat_voice"
+    });
+
+    res.json({ voiceUrl: result.secure_url });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Voice upload failed" });
+  }
+});
 module.exports = router;

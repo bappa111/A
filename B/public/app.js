@@ -228,6 +228,80 @@ async function sendMessage() {
   msgInput.value = "";
   loadMessages();
 }
+let mediaRecorder;
+let audioChunks = [];
+
+/* ======================
+   START RECORD
+====================== */
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
+
+  mediaRecorder.ondataavailable = e => {
+    audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = uploadVoice;
+
+  mediaRecorder.start();
+  alert("🎙️ Recording...");
+}
+
+/* ======================
+   STOP RECORD
+====================== */
+function stopRecording() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    alert("⏹️ Recording stopped");
+  }
+}
+
+/* ======================
+   UPLOAD VOICE
+====================== */
+async function uploadVoice() {
+  const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+  const formData = new FormData();
+  formData.append("voice", audioBlob);
+
+  const res = await fetch(API + "/api/media/voice", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (!data.voiceUrl) {
+    alert("Voice upload failed");
+    return;
+  }
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      voice: data.voiceUrl
+    })
+  });
+
+  alert("🎤 Voice sent");
+  loadMessages();
+if (m.voice) {
+  const audio = document.createElement("audio");
+  audio.src = m.voice;
+  audio.controls = true;
+  box.appendChild(audio);
+}
+}
 
 /* ======================
    SOCKET
