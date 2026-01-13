@@ -9,15 +9,51 @@ let mediaRecorder;
 let audioChunks = [];
 
 /* ======================
+   LOGIN
+====================== */
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Email & password required");
+    return;
+  }
+
+  const res = await fetch(API + "/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  // 🔍 DEBUG — very important
+  alert("LOGIN RESPONSE:\n" + JSON.stringify(data));
+
+  if (!data.token) {
+    alert("Login failed");
+    return;
+  }
+
+  localStorage.setItem("token", data.token);
+  token = data.token;
+
+  location.href = "chat.html";
+}
+
+/* ======================
    LOAD USERS
 ====================== */
 async function loadUsers() {
   const res = await fetch(API + "/api/users", {
     headers: { Authorization: "Bearer " + token }
   });
+
   const users = await res.json();
   const ul = document.getElementById("users");
   ul.innerHTML = "";
+
   users.forEach(u => {
     const li = document.createElement("li");
     li.innerText = u.name;
@@ -45,6 +81,7 @@ async function loadMessages() {
   const res = await fetch(API + "/api/messages/" + currentUser._id, {
     headers: { Authorization: "Bearer " + token }
   });
+
   const msgs = await res.json();
   const box = document.getElementById("messages");
   box.innerHTML = "";
@@ -118,6 +155,7 @@ async function sendImage() {
     method: "POST",
     body: formData
   });
+
   const data = await uploadRes.json();
 
   await fetch(API + "/api/messages", {
@@ -168,6 +206,7 @@ async function uploadVoice() {
     method: "POST",
     body: formData
   });
+
   const data = await res.json();
 
   await fetch(API + "/api/messages", {
@@ -189,7 +228,15 @@ async function uploadVoice() {
    SOCKET
 ====================== */
 if (token) {
-  const payload = JSON.parse(atob(token.split(".")[1]));
+  let payload;
+  try {
+    payload = JSON.parse(atob(token.split(".")[1]));
+  } catch (e) {
+    localStorage.removeItem("token");
+    alert("Session expired, login again");
+    location.href = "index.html";
+  }
+
   socket = io(API, { query: { userId: payload.id } });
   socket.on("private-message", loadMessages);
   loadUsers();
