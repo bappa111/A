@@ -8,14 +8,16 @@
 <hr>
 
 <h4 id="chatWith"></h4>
-<div id="messages"></div>
 
+<div id="messages" style="min-height:200px;"></div>
+
+<!-- TEXT INPUT -->
 <input id="msg" placeholder="Message">
 <button onclick="sendMessage()">Send</button>
 
-<!-- IMAGE ICON -->
+<!-- IMAGE BUTTON -->
 <label for="imageInput"
-       style="border:1px solid #999; padding:6px 10px; cursor:pointer;">
+       style="border:1px solid #999; padding:4px 8px; cursor:pointer;">
   📷
 </label>
 
@@ -23,8 +25,16 @@
   type="file"
   id="imageInput"
   accept="image/*"
-  hidden
-  onchange="handleImageChange(event)">
+  style="display:none"
+  onchange="handleImageChange(event)"
+>
+
+<!-- IMAGE PREVIEW -->
+<div id="imagePreview" style="display:none; margin-top:10px;">
+  <img id="previewImg" style="max-width:200px; display:block;">
+  <button onclick="sendImage()">Send Image</button>
+  <button onclick="cancelImage()">Cancel</button>
+</div>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="app.js"></script>

@@ -3,6 +3,7 @@ const API = "https://a-kisk.onrender.com";
 let token = localStorage.getItem("token");
 let currentUser = null;
 let socket = null;
+let selectedImageFile = null;
 
 /* ======================
    REGISTER
@@ -27,7 +28,7 @@ async function register() {
 
   if (data.msg === "Registered") {
     alert("Registered successfully. Login now.");
-    window.location.href = "index.html";
+    location.href = "index.html";
   } else {
     alert(data.msg || "Register failed");
   }
@@ -60,7 +61,7 @@ async function login() {
 
   localStorage.setItem("token", data.token);
   token = data.token;
-  window.location.href = "chat.html";
+  location.href = "chat.html";
 }
 
 /* ======================
@@ -78,6 +79,7 @@ async function loadUsers() {
   users.forEach(u => {
     const li = document.createElement("li");
     li.innerText = u.name + (u.isOnline ? " 🟢" : " 🔴");
+    li.style.cursor = "pointer";
     li.onclick = () => openChat(u);
     ul.appendChild(li);
   });
@@ -121,72 +123,59 @@ async function loadMessages() {
       img.src = m.image;
       img.style.maxWidth = "200px";
       img.style.display = "block";
+      img.style.margin = "5px 0";
       box.appendChild(img);
     }
   });
 }
 
 /* ======================
-   IMAGE PICK HANDLER
+   IMAGE PICK (PREVIEW)
 ====================== */
 function handleImageChange(e) {
   const file = e.target.files[0];
-  if (!file) {
-    alert("❌ No file picked");
-    return;
-  }
+  if (!file) return;
 
-  alert("✅ File picked: " + file.name);
-  uploadImage(file);
+  selectedImageFile = file;
+
+  const previewBox = document.getElementById("imagePreview");
+  const previewImg = document.getElementById("previewImg");
+
+  previewImg.src = URL.createObjectURL(file);
+  previewBox.style.display = "block";
+
   e.target.value = "";
 }
 
 /* ======================
-   SEND TEXT
+   CANCEL IMAGE
 ====================== */
-async function sendMessage() {
-  if (!currentUser) return;
-
-  const text = msg.value.trim();
-  if (!text) return;
-
-  await fetch(API + "/api/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      receiverId: currentUser._id,
-      message: text
-    })
-  });
-
-  msg.value = "";
-  loadMessages();
+function cancelImage() {
+  selectedImageFile = null;
+  document.getElementById("imagePreview").style.display = "none";
 }
 
 /* ======================
-   UPLOAD IMAGE
+   SEND IMAGE
 ====================== */
-async function uploadImage(file) {
+async function sendImage() {
+  if (!selectedImageFile || !currentUser) return;
+
   alert("⬆️ Uploading image...");
 
   try {
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", selectedImageFile);
 
     const uploadRes = await fetch(API + "/api/media/image", {
       method: "POST",
-      headers: { Authorization: "Bearer " + token },
       body: formData
     });
 
     const data = await uploadRes.json();
-    console.log("UPLOAD RESPONSE:", data);
 
     if (!data.imageUrl) {
-      alert("❌ Upload failed (no URL)");
+      alert("❌ Upload failed");
       return;
     }
 
@@ -203,12 +192,41 @@ async function uploadImage(file) {
     });
 
     alert("✅ Image sent");
+
+    selectedImageFile = null;
+    document.getElementById("imagePreview").style.display = "none";
     loadMessages();
 
   } catch (err) {
     console.error(err);
     alert("❌ Image send failed");
   }
+}
+
+/* ======================
+   SEND TEXT MESSAGE
+====================== */
+async function sendMessage() {
+  if (!currentUser) return;
+
+  const msgInput = document.getElementById("msg");
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      message: text
+    })
+  });
+
+  msgInput.value = "";
+  loadMessages();
 }
 
 /* ======================
