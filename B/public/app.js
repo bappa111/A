@@ -65,6 +65,10 @@ async function loadUsers() {
 function openChat(user) {
   currentUser = user;
   document.getElementById("chatWith").innerText = "Chat with " + user.name;
+  fetch(API + "/api/messages/seen/" + user._id, {
+  method: "POST",
+  headers: { Authorization: "Bearer " + token }
+});
   loadMessages();
 }
 
@@ -84,61 +88,76 @@ async function loadMessages() {
   box.innerHTML = "";
 
   msgs.forEach(m => {
-    const wrap = document.createElement("div");
-    wrap.style.border = "1px solid #ddd";
-    wrap.style.padding = "6px";
-    wrap.style.marginBottom = "6px";
+  const wrap = document.createElement("div");
+  wrap.style.border = "1px solid #ddd";
+  wrap.style.padding = "6px";
+  wrap.style.marginBottom = "6px";
 
-    // TEXT
-    if (m.message) {
-      const p = document.createElement("p");
-      p.innerText = m.message;
-      wrap.appendChild(p);
+  const isMine = m.senderId?.toString() === getMyUserId();
+
+  // TEXT
+  if (m.message) {
+    const p = document.createElement("p");
+    p.innerText = m.message;
+    wrap.appendChild(p);
+  }
+
+  // IMAGE
+  if (m.image) {
+    const img = document.createElement("img");
+    img.src = m.image;
+    img.style.maxWidth = "200px";
+    img.style.display = "block";
+    wrap.appendChild(img);
+  }
+
+  // VOICE
+  if (m.voice) {
+    const audio = document.createElement("audio");
+    audio.src = m.voice;
+    audio.controls = true;
+    audio.style.display = "block";
+    wrap.appendChild(audio);
+  }
+
+  // VIDEO
+  if (m.video) {
+    const video = document.createElement("video");
+    video.src = m.video;
+    video.controls = true;
+    video.style.maxWidth = "250px";
+    video.style.display = "block";
+    wrap.appendChild(video);
+  }
+
+  // 🗑️ DELETE + STATUS (only my message)
+  if (isMine) {
+    const del = document.createElement("button");
+    del.innerText = "🗑️";
+    del.onclick = (e) => {
+      e.stopPropagation();
+      deleteMessage(m._id);
+    };
+    wrap.appendChild(del);
+
+    const status = document.createElement("small");
+    status.style.display = "block";
+
+    if (m.seen) {
+      status.innerText = "✔✔ Seen";
+      status.style.color = "blue";
+    } else if (m.delivered) {
+      status.innerText = "✔✔ Delivered";
+      status.style.color = "gray";
+    } else {
+      status.innerText = "✔ Sent";
     }
 
-    // IMAGE
-    if (m.image) {
-      const img = document.createElement("img");
-      img.src = m.image;
-      img.style.maxWidth = "200px";
-      img.style.display = "block";
-      wrap.appendChild(img);
-    }
+    wrap.appendChild(status);
+  }
 
-    // VOICE
-    if (m.voice) {
-      const audio = document.createElement("audio");
-      audio.src = m.voice;
-      audio.controls = true;
-      audio.style.display = "block";
-      wrap.appendChild(audio);
-    }
-
-    // VIDEO
-    if (m.video) {
-      const video = document.createElement("video");
-      video.src = m.video;
-      video.controls = true;
-      video.style.maxWidth = "250px";
-      video.style.display = "block";
-      wrap.appendChild(video);
-    }
-
-    // DELETE (only own message)
-    if (m.senderId?.toString() === getMyUserId()) {
-      const del = document.createElement("button");
-      del.innerText = "🗑️";
-      del.onclick = (e) => {
-        e.stopPropagation();
-        deleteMessage(m._id);
-      };
-      wrap.appendChild(del);
-    }
-
-    box.appendChild(wrap);
-  });
-}
-
+  box.appendChild(wrap);
+});
 /* ======================
    HELPERS
 ====================== */

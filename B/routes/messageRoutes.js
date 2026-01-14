@@ -15,13 +15,15 @@ router.post("/", auth, async (req, res) => {
   }
 
   const msg = await Message.create({
-    senderId: req.user.id,
-    receiverId,
-    message: message || null,
-    image: image || null,
-    voice: voice || null,
-    video: video || null
-  });
+  senderId: req.user.id,
+  receiverId,
+  message: message || null,
+  image: image || null,
+  voice: voice || null,
+  video: video || null,
+  delivered: false,
+  seen: false
+});
 
   res.json(msg);
 });
@@ -30,6 +32,14 @@ router.post("/", auth, async (req, res) => {
    GET CHAT
 ====================== */
 router.get("/:userId", auth, async (req, res) => {
+  await Message.updateMany(
+    {
+      senderId: req.params.userId,
+      receiverId: req.user.id,
+      delivered: false
+    },
+    { delivered: true }
+  );
   const messages = await Message.find({
     $or: [
       { senderId: req.user.id, receiverId: req.params.userId },
@@ -53,6 +63,18 @@ router.delete("/:id", auth, async (req, res) => {
 
   await msg.deleteOne();
   res.json({ msg: "Deleted" });
+});
+router.post("/seen/:userId", auth, async (req, res) => {
+  await Message.updateMany(
+    {
+      senderId: req.params.userId,
+      receiverId: req.user.id,
+      seen: false
+    },
+    { seen: true }
+  );
+
+  res.json({ msg: "Seen updated" });
 });
 
 module.exports = router;
