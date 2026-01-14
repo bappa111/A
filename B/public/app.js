@@ -35,7 +35,7 @@ async function login() {
 
   localStorage.setItem("token", data.token);
   token = data.token;
-  location.href = "chat.html";
+  location.href = "feed.html";
 }
 
 /* ======================
@@ -353,7 +353,7 @@ async function uploadVoice() {
 /* ======================
    SOCKET
 ====================== */
-if (token && location.pathname.includes("chat")) {
+if (token && location.pathname.includes("feed.html")) {
   let payload;
   try {
     payload = JSON.parse(atob(token.split(".")[1]));
