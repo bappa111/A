@@ -23,7 +23,7 @@ router.post("/", auth, async (req, res) => {
   res.json(msg);
 });
 
-// GET CHAT HISTORY
+// GET CHAT
 router.get("/:userId", auth, async (req, res) => {
   const messages = await Message.find({
     $or: [
@@ -33,6 +33,19 @@ router.get("/:userId", auth, async (req, res) => {
   }).sort({ createdAt: 1 });
 
   res.json(messages);
+});
+
+// 🗑️ DELETE MESSAGE (ONLY SENDER CAN DELETE)
+router.delete("/:id", auth, async (req, res) => {
+  const msg = await Message.findById(req.params.id);
+  if (!msg) return res.status(404).json({ msg: "Not found" });
+
+  if (msg.senderId.toString() !== req.user.id) {
+    return res.status(403).json({ msg: "Not allowed" });
+  }
+
+  await msg.deleteOne();
+  res.json({ msg: "Deleted" });
 });
 
 module.exports = router;

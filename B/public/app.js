@@ -35,7 +35,6 @@ async function login() {
 
   localStorage.setItem("token", data.token);
   token = data.token;
-
   location.href = "chat.html";
 }
 
@@ -71,18 +70,14 @@ function openChat(user) {
 }
 
 /* ======================
-   LOAD MESSAGES (WITH DELETE)
+   LOAD MESSAGES (TEXT + IMAGE + VOICE + DELETE)
 ====================== */
 async function loadMessages() {
   if (!currentUser) return;
 
   const res = await fetch(
     API + "/api/messages/" + currentUser._id,
-    {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    }
+    { headers: { Authorization: "Bearer " + token } }
   );
 
   const msgs = await res.json();
@@ -90,49 +85,46 @@ async function loadMessages() {
   box.innerHTML = "";
 
   msgs.forEach(m => {
-    const wrapper = document.createElement("div");
-    wrapper.style.marginBottom = "6px";
+    const wrap = document.createElement("div");
+    wrap.style.marginBottom = "8px";
 
-    // TEXT
     if (m.message) {
       const p = document.createElement("p");
       p.innerText = m.message;
-      wrapper.appendChild(p);
+      wrap.appendChild(p);
     }
 
-    // IMAGE
     if (m.image) {
       const img = document.createElement("img");
       img.src = m.image;
       img.style.maxWidth = "200px";
       img.style.display = "block";
-      wrapper.appendChild(img);
+      wrap.appendChild(img);
     }
 
-    // VOICE
     if (m.voice) {
       const audio = document.createElement("audio");
       audio.src = m.voice;
       audio.controls = true;
       audio.style.display = "block";
-      wrapper.appendChild(audio);
+      wrap.appendChild(audio);
     }
 
-    // 🗑️ DELETE (only my message)
+    // 🗑️ delete only own message
     if (m.senderId === getMyUserId()) {
       const del = document.createElement("button");
       del.innerText = "🗑️";
       del.onclick = () => deleteMessage(m._id);
-      wrapper.appendChild(del);
+      wrap.appendChild(del);
     }
 
-    box.appendChild(wrapper);
+    box.appendChild(wrap);
   });
 }
 
-// ======================
-// HELPERS
-// ======================
+/* ======================
+   HELPERS
+====================== */
 function getMyUserId() {
   const payload = JSON.parse(atob(token.split(".")[1]));
   return payload.id;
@@ -143,9 +135,7 @@ async function deleteMessage(id) {
 
   await fetch(API + "/api/messages/" + id, {
     method: "DELETE",
-    headers: {
-      Authorization: "Bearer " + token
-    }
+    headers: { Authorization: "Bearer " + token }
   });
 
   loadMessages();
@@ -161,7 +151,7 @@ async function sendMessage() {
   const text = msgInput.value.trim();
   if (!text) return;
 
-  await fetch(API + "/api/messages", {
+  const res = await fetch(API + "/api/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -172,6 +162,9 @@ async function sendMessage() {
       message: text
     })
   });
+
+  const msg = await res.json();
+  if (socket) socket.emit("private-message", msg);
 
   msgInput.value = "";
   loadMessages();
@@ -191,46 +184,51 @@ function handleImageChange(e) {
    SEND IMAGE
 ====================== */
 async function sendImage() {
-  const formData = new FormData();
-  formData.append("image", selectedImageFile);
+  try {
+    const formData = new FormData();
+    formData.append("image", selectedImageFile);
 
-  const uploadRes = await fetch(API + "/api/media/image", {
-    method: "POST",
-    body: formData
-  });
+    const uploadRes = await fetch(API + "/api/media/image", {
+      method: "POST",
+      body: formData
+    });
 
-  const data = await uploadRes.json();
-  if (!data.imageUrl) {
-    alert("Image upload failed");
-    return;
+    const data = await uploadRes.json();
+    if (!data.imageUrl) {
+      alert("Image upload failed");
+      return;
+    }
+
+    const res = await fetch(API + "/api/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({
+        receiverId: currentUser._id,
+        image: data.imageUrl
+      })
+    });
+
+    const msg = await res.json();
+    if (socket) socket.emit("private-message", msg);
+
+    selectedImageFile = null;
+    loadMessages();
+  } catch (err) {
+    alert("Image send failed");
   }
-
-  await fetch(API + "/api/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      receiverId: currentUser._id,
-      image: data.imageUrl
-    })
-  });
-
-  loadMessages();
 }
 
 /* ======================
-   START VOICE RECORD
+   VOICE RECORD
 ====================== */
 async function startVoice() {
-  if (!currentUser) {
-    alert("Select user first");
-    return;
-  }
+  if (!currentUser) return;
 
   if (!navigator.mediaDevices || !window.MediaRecorder) {
-    alert("Voice not supported on this device");
+    alert("Voice not supported");
     return;
   }
 
@@ -243,20 +241,14 @@ async function startVoice() {
     mediaRecorder.onstop = uploadVoice;
 
     mediaRecorder.start();
-    alert("🎙️ Recording started");
-  } catch (err) {
-    alert("Microphone permission denied");
+    alert("🎙️ Recording...");
+  } catch {
+    alert("Mic permission denied");
   }
 }
 
-/* ======================
-   STOP VOICE RECORD
-====================== */
 function stopVoice() {
-  if (mediaRecorder) {
-    mediaRecorder.stop();
-    alert("⏹️ Recording stopped");
-  }
+  if (mediaRecorder) mediaRecorder.stop();
 }
 
 /* ======================
@@ -267,18 +259,18 @@ async function uploadVoice() {
   const formData = new FormData();
   formData.append("voice", blob);
 
-  const res = await fetch(API + "/api/media/voice", {
+  const uploadRes = await fetch(API + "/api/media/voice", {
     method: "POST",
     body: formData
   });
 
-  const data = await res.json();
+  const data = await uploadRes.json();
   if (!data.voiceUrl) {
     alert("Voice upload failed");
     return;
   }
 
-  await fetch(API + "/api/messages", {
+  const res = await fetch(API + "/api/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -289,6 +281,9 @@ async function uploadVoice() {
       voice: data.voiceUrl
     })
   });
+
+  const msg = await res.json();
+  if (socket) socket.emit("private-message", msg);
 
   loadMessages();
 }
