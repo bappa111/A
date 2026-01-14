@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<!-- 🔝 TOP BAR -->
+<div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ccc">
+  <b>MyApp</b>
+  <div>
+    <button onclick="alert('Calling coming soon')">📞</button>
+    <button onclick="location.href='chat.html'">💬</button>
+  </div>
+</div>
+
+<!-- 📝 CREATE POST -->
+<div style="padding:10px">
+  <textarea id="postText" placeholder="What's on your mind?"></textarea><br><br>
+
+  <input type="file" id="postImage" accept="image/*">
+  <input type="file" id="postVideo" accept="video/*"><br><br>
+
+  <button onclick="createPost()">Post</button>
+</div>
+
+<hr>
+
+<!-- 📰 FEED -->
+<div id="feed"></div>
+
+<script src="feed.js"></script>
+</body>
+</html>
