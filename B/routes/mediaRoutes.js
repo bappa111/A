@@ -35,7 +35,7 @@ router.post("/image", uploadImage.single("image"), async (req, res) => {
 });
 
 /* ======================
-   VOICE UPLOAD  ✅ FIXED
+   VOICE UPLOAD
 ====================== */
 const uploadAny = multer({
   storage: multer.memoryStorage(),
@@ -51,7 +51,7 @@ router.post("/voice", uploadAny.single("voice"), async (req, res) => {
     const result = await cloudinary.uploader.upload(
       `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
       {
-        resource_type: "video", // 🔥 audio goes as video in cloudinary
+        resource_type: "video", // audio = video in Cloudinary
         folder: "chat_voice"
       }
     );
@@ -63,25 +63,4 @@ router.post("/voice", uploadAny.single("voice"), async (req, res) => {
   }
 });
 
-// DELETE MESSAGE
-router.delete("/:id", auth, async (req, res) => {
-  try {
-    const msg = await Message.findById(req.params.id);
-
-    if (!msg) {
-      return res.status(404).json({ msg: "Message not found" });
-    }
-
-    // 🔐 only sender can delete
-    if (msg.senderId.toString() !== req.user.id) {
-      return res.status(403).json({ msg: "Not allowed" });
-    }
-
-    await msg.deleteOne();
-    res.json({ msg: "Message deleted" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: "Delete failed" });
-  }
-});
 module.exports = router;
