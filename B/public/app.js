@@ -166,8 +166,6 @@ function getMyUserId() {
 }
 
 async function deleteMessage(id) {
-  if (!confirm("Delete this message?")) return;
-
   await fetch(API + "/api/messages/" + id, {
     method: "DELETE",
     headers: { Authorization: "Bearer " + token }

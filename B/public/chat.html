@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+</head>
 <body>
 
 <h3>Users</h3>
@@ -11,40 +15,64 @@
 
 <div id="messages" style="min-height:200px;"></div>
 
-<!-- TEXT INPUT -->
+<!-- ======================
+     MESSAGE INPUT
+====================== -->
 <input id="msg" placeholder="Message">
 <button onclick="sendMessage()">Send</button>
 
-<!-- IMAGE BUTTON -->
-<label for="imageInput"
-       style="border:1px solid #999; padding:4px 8px; cursor:pointer;">
-  📷
-</label>
-<button onclick="startVoice()">🎙️</button>
-<button onclick="stopVoice()">⏹️</button>
-<button onclick="deleteSelectedMessage()">🗑️ Delete</button>
+<!-- ======================
+     ATTACH BUTTON
+====================== -->
+<button id="attachBtn">➕</button>
 
+<div id="attachMenu" style="display:none; margin-top:6px;">
+  <button onclick="document.getElementById('imageInput').click()">📷 Image</button>
+  <button onclick="document.getElementById('videoInput').click()">🎥 Video</button>
+  <button onclick="startVoice()">🎙️ Voice</button>
+</div>
+
+<!-- ======================
+     HIDDEN FILE INPUTS
+====================== -->
 <input
   type="file"
   id="imageInput"
   accept="image/*"
-  style="display:none"
+  hidden
   onchange="handleImageChange(event)"
 >
+
 <input
   type="file"
+  id="videoInput"
   accept="video/*"
-  onchange="handleVideoChange(event)">
+  hidden
+  onchange="handleVideoChange(event)"
+>
 
-<!-- IMAGE PREVIEW -->
-<div id="imagePreview" style="display:none; margin-top:10px;">
-  <img id="previewImg" style="max-width:200px; display:block;">
-  <button onclick="sendImage()">Send Image</button>
-  <button onclick="cancelImage()">Cancel</button>
-</div>
+<!-- ======================
+     VOICE CONTROLS
+====================== -->
+<button onclick="stopVoice()">⏹️ Stop Voice</button>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="app.js"></script>
+
+<script>
+  document.getElementById("attachBtn").onclick = () => {
+    const menu = document.getElementById("attachMenu");
+    menu.style.display =
+      menu.style.display === "block" ? "none" : "block";
+  };
+</script>
+<script>
+  // toggle attach menu
+  document.getElementById("attachBtn").onclick = () => {
+    const menu = document.getElementById("attachMenu");
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+  };
+</script>
 
 </body>
 </html>

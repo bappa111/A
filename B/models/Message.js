@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose");   // 🔥 এই লাইনটা MISSING ছিল
 
 const MessageSchema = new mongoose.Schema(
   {
@@ -10,9 +10,14 @@ const MessageSchema = new mongoose.Schema(
     voice: { type: String, default: null },
     video: { type: String, default: null },
 
-    // ✅ STATUS
     delivered: { type: Boolean, default: false },
-    seen: { type: Boolean, default: false }
+    seen: { type: Boolean, default: false },
+
+    // ✅ delete for everyone support
+    deletedFor: {
+      type: [mongoose.Schema.Types.ObjectId],
+      default: []
+    }
   },
   { timestamps: true }
 );
