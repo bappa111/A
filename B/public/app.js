@@ -64,13 +64,12 @@ async function loadUsers() {
 ====================== */
 function openChat(user) {
   currentUser = user;
-  document.getElementById("chatWith").innerText =
-    "Chat with " + user.name;
+  document.getElementById("chatWith").innerText = "Chat with " + user.name;
   loadMessages();
 }
 
 /* ======================
-   LOAD MESSAGES (TEXT + IMAGE + VOICE + DELETE)
+   LOAD MESSAGES
 ====================== */
 async function loadMessages() {
   if (!currentUser) return;
@@ -86,14 +85,18 @@ async function loadMessages() {
 
   msgs.forEach(m => {
     const wrap = document.createElement("div");
-    wrap.style.marginBottom = "8px";
+    wrap.style.border = "1px solid #ddd";
+    wrap.style.padding = "6px";
+    wrap.style.marginBottom = "6px";
 
+    // TEXT
     if (m.message) {
       const p = document.createElement("p");
       p.innerText = m.message;
       wrap.appendChild(p);
     }
 
+    // IMAGE
     if (m.image) {
       const img = document.createElement("img");
       img.src = m.image;
@@ -102,6 +105,7 @@ async function loadMessages() {
       wrap.appendChild(img);
     }
 
+    // VOICE
     if (m.voice) {
       const audio = document.createElement("audio");
       audio.src = m.voice;
@@ -110,11 +114,24 @@ async function loadMessages() {
       wrap.appendChild(audio);
     }
 
-    // 🗑️ delete only own message
-    if (m.senderId === getMyUserId()) {
+    // VIDEO
+    if (m.video) {
+      const video = document.createElement("video");
+      video.src = m.video;
+      video.controls = true;
+      video.style.maxWidth = "250px";
+      video.style.display = "block";
+      wrap.appendChild(video);
+    }
+
+    // DELETE (only own message)
+    if (m.senderId?.toString() === getMyUserId()) {
       const del = document.createElement("button");
       del.innerText = "🗑️";
-      del.onclick = () => deleteMessage(m._id);
+      del.onclick = (e) => {
+        e.stopPropagation();
+        deleteMessage(m._id);
+      };
       wrap.appendChild(del);
     }
 
@@ -171,7 +188,7 @@ async function sendMessage() {
 }
 
 /* ======================
-   IMAGE PICK
+   IMAGE
 ====================== */
 function handleImageChange(e) {
   selectedImageFile = e.target.files[0];
@@ -180,49 +197,85 @@ function handleImageChange(e) {
   e.target.value = "";
 }
 
-/* ======================
-   SEND IMAGE
-====================== */
 async function sendImage() {
-  try {
-    const formData = new FormData();
-    formData.append("image", selectedImageFile);
+  const formData = new FormData();
+  formData.append("image", selectedImageFile);
 
-    const uploadRes = await fetch(API + "/api/media/image", {
-      method: "POST",
-      body: formData
-    });
+  const uploadRes = await fetch(API + "/api/media/image", {
+    method: "POST",
+    body: formData
+  });
 
-    const data = await uploadRes.json();
-    if (!data.imageUrl) {
-      alert("Image upload failed");
-      return;
-    }
-
-    const res = await fetch(API + "/api/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify({
-        receiverId: currentUser._id,
-        image: data.imageUrl
-      })
-    });
-
-    const msg = await res.json();
-    if (socket) socket.emit("private-message", msg);
-
-    selectedImageFile = null;
-    loadMessages();
-  } catch (err) {
-    alert("Image send failed");
+  const data = await uploadRes.json();
+  if (!data.imageUrl) {
+    alert("Image upload failed");
+    return;
   }
+
+  const res = await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      image: data.imageUrl
+    })
+  });
+
+  const msg = await res.json();
+  if (socket) socket.emit("private-message", msg);
+
+  selectedImageFile = null;
+  loadMessages();
 }
 
 /* ======================
-   VOICE RECORD
+   VIDEO
+====================== */
+function handleVideoChange(e) {
+  const file = e.target.files[0];
+  if (!file || !currentUser) return;
+  sendVideo(file);
+  e.target.value = "";
+}
+
+async function sendVideo(file) {
+  const formData = new FormData();
+  formData.append("video", file);
+
+  const uploadRes = await fetch(API + "/api/media/video", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await uploadRes.json();
+  if (!data.videoUrl) {
+    alert("Video upload failed");
+    return;
+  }
+
+  const res = await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      video: data.videoUrl
+    })
+  });
+
+  const msg = await res.json();
+  if (socket) socket.emit("private-message", msg);
+
+  loadMessages();
+}
+
+/* ======================
+   VOICE
 ====================== */
 async function startVoice() {
   if (!currentUser) return;
@@ -232,28 +285,21 @@ async function startVoice() {
     return;
   }
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
 
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = uploadVoice;
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.onstop = uploadVoice;
 
-    mediaRecorder.start();
-    alert("🎙️ Recording...");
-  } catch {
-    alert("Mic permission denied");
-  }
+  mediaRecorder.start();
+  alert("🎙️ Recording...");
 }
 
 function stopVoice() {
   if (mediaRecorder) mediaRecorder.stop();
 }
 
-/* ======================
-   UPLOAD VOICE
-====================== */
 async function uploadVoice() {
   const blob = new Blob(audioChunks, { type: "audio/webm" });
   const formData = new FormData();

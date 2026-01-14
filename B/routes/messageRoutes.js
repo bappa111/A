@@ -4,9 +4,11 @@ const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// SEND MESSAGE (TEXT / IMAGE / VOICE)
+/* ======================
+   SEND MESSAGE
+====================== */
 router.post("/", auth, async (req, res) => {
-  const { receiverId, message, image, voice } = req.body;
+  const { receiverId, message, image, voice, video } = req.body;
 
   if (!receiverId) {
     return res.status(400).json({ msg: "receiverId required" });
@@ -17,13 +19,16 @@ router.post("/", auth, async (req, res) => {
     receiverId,
     message: message || null,
     image: image || null,
-    voice: voice || null
+    voice: voice || null,
+    video: video || null
   });
 
   res.json(msg);
 });
 
-// GET CHAT
+/* ======================
+   GET CHAT
+====================== */
 router.get("/:userId", auth, async (req, res) => {
   const messages = await Message.find({
     $or: [
@@ -35,7 +40,9 @@ router.get("/:userId", auth, async (req, res) => {
   res.json(messages);
 });
 
-// 🗑️ DELETE MESSAGE (ONLY SENDER CAN DELETE)
+/* ======================
+   DELETE MESSAGE
+====================== */
 router.delete("/:id", auth, async (req, res) => {
   const msg = await Message.findById(req.params.id);
   if (!msg) return res.status(404).json({ msg: "Not found" });

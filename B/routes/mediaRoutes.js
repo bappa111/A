@@ -18,9 +18,7 @@ const uploadImage = multer({
 
 router.post("/image", uploadImage.single("image"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ msg: "No image uploaded" });
-    }
+    if (!req.file) return res.status(400).json({ msg: "No image uploaded" });
 
     const result = await cloudinary.uploader.upload(
       `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
@@ -44,14 +42,12 @@ const uploadAny = multer({
 
 router.post("/voice", uploadAny.single("voice"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ msg: "No voice file" });
-    }
+    if (!req.file) return res.status(400).json({ msg: "No voice file" });
 
     const result = await cloudinary.uploader.upload(
       `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
       {
-        resource_type: "video", // audio = video in Cloudinary
+        resource_type: "video",
         folder: "chat_voice"
       }
     );
@@ -60,6 +56,28 @@ router.post("/voice", uploadAny.single("voice"), async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Voice upload failed" });
+  }
+});
+
+/* ======================
+   VIDEO UPLOAD
+====================== */
+router.post("/video", uploadAny.single("video"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ msg: "No video file" });
+
+    const result = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`,
+      {
+        resource_type: "video",
+        folder: "chat_videos"
+      }
+    );
+
+    res.json({ videoUrl: result.secure_url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Video upload failed" });
   }
 });
 
