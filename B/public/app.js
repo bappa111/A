@@ -71,42 +71,84 @@ function openChat(user) {
 }
 
 /* ======================
-   LOAD MESSAGES
+   LOAD MESSAGES (WITH DELETE)
 ====================== */
 async function loadMessages() {
   if (!currentUser) return;
 
-  const res = await fetch(API + "/api/messages/" + currentUser._id, {
-    headers: { Authorization: "Bearer " + token }
-  });
+  const res = await fetch(
+    API + "/api/messages/" + currentUser._id,
+    {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    }
+  );
 
   const msgs = await res.json();
   const box = document.getElementById("messages");
   box.innerHTML = "";
 
   msgs.forEach(m => {
+    const wrapper = document.createElement("div");
+    wrapper.style.marginBottom = "6px";
+
+    // TEXT
     if (m.message) {
       const p = document.createElement("p");
       p.innerText = m.message;
-      box.appendChild(p);
+      wrapper.appendChild(p);
     }
 
+    // IMAGE
     if (m.image) {
       const img = document.createElement("img");
       img.src = m.image;
       img.style.maxWidth = "200px";
       img.style.display = "block";
-      box.appendChild(img);
+      wrapper.appendChild(img);
     }
 
+    // VOICE
     if (m.voice) {
       const audio = document.createElement("audio");
       audio.src = m.voice;
       audio.controls = true;
       audio.style.display = "block";
-      box.appendChild(audio);
+      wrapper.appendChild(audio);
+    }
+
+    // 🗑️ DELETE (only my message)
+    if (m.senderId === getMyUserId()) {
+      const del = document.createElement("button");
+      del.innerText = "🗑️";
+      del.onclick = () => deleteMessage(m._id);
+      wrapper.appendChild(del);
+    }
+
+    box.appendChild(wrapper);
+  });
+}
+
+// ======================
+// HELPERS
+// ======================
+function getMyUserId() {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  return payload.id;
+}
+
+async function deleteMessage(id) {
+  if (!confirm("Delete this message?")) return;
+
+  await fetch(API + "/api/messages/" + id, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + token
     }
   });
+
+  loadMessages();
 }
 
 /* ======================
