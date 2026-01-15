@@ -12,7 +12,8 @@ router.post("/", auth, async (req, res) => {
 
   const post = await Post.create({
   userId: req.user.id,
-  content: req.body.content || "",
+  content: req.body.content,
+  image: req.body.image || null,
   video: req.body.video || null
 });
 

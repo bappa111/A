@@ -6,34 +6,53 @@ const token = localStorage.getItem("token");
 ====================== */
 async function createPost() {
   const text = document.getElementById("postText").value.trim();
+  const imageFile = document.getElementById("postImage").files[0];
   const videoFile = document.getElementById("postVideo").files[0];
 
-  if (!text && !videoFile) {
-    return alert("Write something or select video");
+  if (!text && !imageFile && !videoFile) {
+    return alert("Write something or select image/video");
   }
 
+  let imageUrl = null;
   let videoUrl = null;
 
-  // 1️⃣ upload video if exists
-  if (videoFile) {
+  // 🔹 upload image
+  if (imageFile) {
     const fd = new FormData();
-    fd.append("video", videoFile);
+    fd.append("image", imageFile);
 
-    const uploadRes = await fetch(API + "/api/media/video", {
+    const res = await fetch(API + "/api/media/image", {
       method: "POST",
       body: fd
     });
 
-    const uploadData = await uploadRes.json();
-    if (!uploadData.videoUrl) {
-      alert("Video upload failed");
-      return;
+    const data = await res.json();
+    if (!data.imageUrl) {
+      return alert("Image upload failed");
     }
 
-    videoUrl = uploadData.videoUrl;
+    imageUrl = data.imageUrl;
   }
 
-  // 2️⃣ create post
+  // 🔹 upload video
+  if (videoFile) {
+    const fd = new FormData();
+    fd.append("video", videoFile);
+
+    const res = await fetch(API + "/api/media/video", {
+      method: "POST",
+      body: fd
+    });
+
+    const data = await res.json();
+    if (!data.videoUrl) {
+      return alert("Video upload failed");
+    }
+
+    videoUrl = data.videoUrl;
+  }
+
+  // 🔹 create post
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -42,16 +61,18 @@ async function createPost() {
     },
     body: JSON.stringify({
       content: text,
+      image: imageUrl,
       video: videoUrl
     })
   });
 
+  // reset
   document.getElementById("postText").value = "";
+  document.getElementById("postImage").value = "";
   document.getElementById("postVideo").value = "";
 
   loadFeed();
 }
-
 /* ======================
    LOAD FEED  ✅ THIS WAS MISSING
 ====================== */
