@@ -6,41 +6,34 @@ const token = localStorage.getItem("token");
 ====================== */
 async function createPost() {
   const text = document.getElementById("postText").value.trim();
-  const imgFile = document.getElementById("postImage").files[0];
-  const vidFile = document.getElementById("postVideo").files[0];
+  const videoFile = document.getElementById("postVideo").files[0];
 
-  let imageUrl = null;
+  if (!text && !videoFile) {
+    return alert("Write something or select video");
+  }
+
   let videoUrl = null;
 
-  // IMAGE UPLOAD
-  if (imgFile) {
+  // 1️⃣ upload video if exists
+  if (videoFile) {
     const fd = new FormData();
-    fd.append("image", imgFile);
+    fd.append("video", videoFile);
 
-    const res = await fetch(API + "/api/media/image", {
+    const uploadRes = await fetch(API + "/api/media/video", {
       method: "POST",
       body: fd
     });
 
-    const data = await res.json();
-    imageUrl = data.imageUrl;
+    const uploadData = await uploadRes.json();
+    if (!uploadData.videoUrl) {
+      alert("Video upload failed");
+      return;
+    }
+
+    videoUrl = uploadData.videoUrl;
   }
 
-  // VIDEO UPLOAD
-  if (vidFile) {
-    const fd = new FormData();
-    fd.append("video", vidFile);
-
-    const res = await fetch(API + "/api/media/video", {
-      method: "POST",
-      body: fd
-    });
-
-    const data = await res.json();
-    videoUrl = data.videoUrl;
-  }
-
-  // CREATE POST
+  // 2️⃣ create post
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -49,21 +42,18 @@ async function createPost() {
     },
     body: JSON.stringify({
       content: text,
-      image: imageUrl,
       video: videoUrl
     })
   });
 
-  // reset
   document.getElementById("postText").value = "";
-  document.getElementById("postImage").value = "";
   document.getElementById("postVideo").value = "";
 
   loadFeed();
 }
 
 /* ======================
-   LOAD FEED
+   LOAD FEED  ✅ THIS WAS MISSING
 ====================== */
 async function loadFeed() {
   const res = await fetch(API + "/api/posts", {
@@ -78,22 +68,25 @@ async function loadFeed() {
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
-    div.style.marginBottom = "8px";
+    div.style.marginBottom = "10px";
 
-    let html = `<b>${p.userId?.name || "User"}</b>`;
+    div.innerHTML = `
+      <b>${p.userId?.name || "User"}</b>
+      <p>${p.content || ""}</p>
 
-    if (p.content) html += `<p>${p.content}</p>`;
-    if (p.image) html += `<img src="${p.image}" style="max-width:200px;display:block">`;
-    if (p.video) html += `<video src="${p.video}" controls style="max-width:250px;display:block"></video>`;
+      ${p.video ? `
+        <video controls style="max-width:100%;margin-top:6px">
+          <source src="${p.video}">
+        </video>
+      ` : ""}
 
-    html += `
       <button>👍 Like</button>
       <button>💬 Comment</button>
     `;
 
-    div.innerHTML = html;
     feed.appendChild(div);
   });
 }
 
+// 🔥 VERY IMPORTANT
 loadFeed();
