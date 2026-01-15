@@ -10,20 +10,16 @@
     <button onclick="location.href='chat.html'">💬</button>  </div>
 </div>
 
-<!-- 📝 CREATE POST -->
-<div style="padding:10px">
-  <textarea id="postText" placeholder="What's on your mind?"></textarea><br><br>
+<textarea id="postText" placeholder="What's on your mind?"></textarea><br>
 
-  <input type="file" id="postImage" accept="image/*">
-  <input type="file" id="postVideo" accept="video/*"><br><br>
+<input type="file" id="postImage" accept="image/*"><br>
+<input type="file" id="postVideo" accept="video/*"><br>
 
-  <button onclick="createPost()">Post</button>
-</div>
+<button onclick="createPost()">Post</button>
 
 <hr>
 
-<!-- 📰 FEED -->
-<div id="feed"></div>
+<div id="feedPosts"></div>
 
 <script src="feed.js"></script>
 </body>

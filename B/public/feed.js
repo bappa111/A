@@ -3,11 +3,10 @@ const token = localStorage.getItem("token");
 
 async function createPost() {
   const text = document.getElementById("postText").value;
-  const img = document.getElementById("postImage").files[0];
-  const vid = document.getElementById("postVideo").files[0];
 
-  // আপাতত শুধু text post
-  const res = await fetch(API + "/api/posts", {
+  if (!text.trim()) return;
+
+  await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,14 +15,19 @@ async function createPost() {
     body: JSON.stringify({ text })
   });
 
+  document.getElementById("postText").value = "";
   loadFeed();
 }
 
 async function loadFeed() {
-  const res = await fetch(API + "/api/posts");
-  const posts = await res.json();
+  const res = await fetch(API + "/api/posts", {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
 
-  const feed = document.getElementById("feed");
+  const posts = await res.json();
+  const feed = document.getElementById("feedPosts");
   feed.innerHTML = "";
 
   posts.forEach(p => {
