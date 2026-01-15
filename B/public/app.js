@@ -353,7 +353,7 @@ async function uploadVoice() {
 /* ======================
    SOCKET
 ====================== */
-if (token && location.pathname.includes("feed.html")) {
+if (token && location.pathname.includes("chat.html")) {
   let payload;
   try {
     payload = JSON.parse(atob(token.split(".")[1]));
