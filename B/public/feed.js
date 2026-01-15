@@ -24,7 +24,7 @@ async function loadFeed() {
   });
 
   const posts = await res.json();
-  const feed = document.getElementById("feedPosts"); // ✅ FIX
+  const feed = document.getElementById("feed"); // ✅ FIX
   feed.innerHTML = "";
 
   posts.forEach(p => {
