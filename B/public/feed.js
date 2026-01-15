@@ -11,7 +11,7 @@ async function createPost() {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({ text })
+    body: JSON.stringify({ content: text })
   });
 
   document.getElementById("postText").value = "";
@@ -24,7 +24,7 @@ async function loadFeed() {
   });
 
   const posts = await res.json();
-  const feed = document.getElementById("feed");
+  const feed = document.getElementById("feedPosts"); // ✅ FIX
   feed.innerHTML = "";
 
   posts.forEach(p => {
@@ -34,7 +34,7 @@ async function loadFeed() {
     div.style.marginBottom = "8px";
 
     div.innerHTML = `
-      <b>${p.userId.name}</b>
+      <b>${p.userId?.name || "User"}</b>
       <p>${p.content}</p>
       <button>👍 Like</button>
       <button>💬 Comment</button>
