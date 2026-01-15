@@ -92,18 +92,22 @@ async function loadFeed() {
     div.style.marginBottom = "10px";
 
     div.innerHTML = `
-      <b>${p.userId?.name || "User"}</b>
-      <p>${p.content || ""}</p>
+  <b>${p.userId?.name || "User"}</b>
+  <p>${p.content || ""}</p>
 
-      ${p.video ? `
-        <video controls style="max-width:100%;margin-top:6px">
-          <source src="${p.video}">
-        </video>
-      ` : ""}
+  ${p.image ? `
+    <img src="${p.image}" style="max-width:100%;margin-top:6px" />
+  ` : ""}
 
-      <button>👍 Like</button>
-      <button>💬 Comment</button>
-    `;
+  ${p.video ? `
+    <video controls style="max-width:100%;margin-top:6px">
+      <source src="${p.video}">
+    </video>
+  ` : ""}
+
+  <button>👍 Like</button>
+  <button>💬 Comment</button>
+`;
 
     feed.appendChild(div);
   });

@@ -11,11 +11,11 @@ router.post("/", auth, async (req, res) => {
   const { content, image, video } = req.body;
 
   const post = await Post.create({
-  userId: req.user.id,
-  content: req.body.content,
-  image: req.body.image || null,
-  video: req.body.video || null
-});
+    userId: req.user.id,
+    content: content || "",
+    image: image || null,
+    video: video || null
+  });
 
   res.json(post);
 });
