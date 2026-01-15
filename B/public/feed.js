@@ -16,7 +16,7 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
-  // 🔹 upload image
+  // IMAGE
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -27,14 +27,10 @@ async function createPost() {
     });
 
     const data = await res.json();
-    if (!data.imageUrl) {
-      return alert("Image upload failed");
-    }
-
-    imageUrl = data.imageUrl;
+    imageUrl = data.imageUrl || null;
   }
 
-  // 🔹 upload video
+  // VIDEO
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -45,14 +41,9 @@ async function createPost() {
     });
 
     const data = await res.json();
-    if (!data.videoUrl) {
-      return alert("Video upload failed");
-    }
-
-    videoUrl = data.videoUrl;
+    videoUrl = data.videoUrl || null;
   }
 
-  // 🔹 create post
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -60,13 +51,12 @@ async function createPost() {
       Authorization: "Bearer " + token
     },
     body: JSON.stringify({
-      content: text,
+      content: text || "",
       image: imageUrl,
       video: videoUrl
     })
   });
 
-  // reset
   document.getElementById("postText").value = "";
   document.getElementById("postImage").value = "";
   document.getElementById("postVideo").value = "";
