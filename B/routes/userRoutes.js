@@ -45,4 +45,24 @@ router.put("/profile", auth, async (req, res) => {
   res.json(user);
 });
 
+// ✏️ UPDATE OWN PROFILE
+router.put("/profile", auth, async (req, res) => {
+  const { bio, profilePic } = req.body;
+
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ msg: "User not found" });
+  }
+
+  if (bio !== undefined) user.bio = bio;
+  if (profilePic !== undefined) user.profilePic = profilePic;
+
+  await user.save();
+
+  res.json({
+    msg: "Profile updated",
+    user
+  });
+});
+
 module.exports = router;

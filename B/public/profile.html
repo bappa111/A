@@ -2,20 +2,19 @@
 <html>
 <body>
 
-<h3>User Profile</h3>
-
-<!-- USER INFO -->
-<p><b>Name:</b> <span id="name"></span></p>
-<p><b>Email:</b> <span id="email"></span></p>
+<h3>Edit Profile</h3>
 
 <img id="profilePic" width="120" style="display:none"><br><br>
 
-<p><b>Bio:</b></p>
-<p id="bio"></p>
+<input type="file" id="profilePicInput" accept="image/*"><br><br>
+
+<textarea id="bio" placeholder="Write bio..."></textarea><br><br>
+
+<button onclick="updateProfile()">Save</button>
 
 <hr>
 
-<h4>User Posts</h4>
+<h4>Your Posts</h4>
 <div id="posts"></div>
 
 <script src="profile.js"></script>

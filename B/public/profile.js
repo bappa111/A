@@ -1,79 +1,82 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
-// 🔐 userId URL থেকে আসবে (?id=xxxx)
-const userId = new URLSearchParams(window.location.search).get("id");
+async function loadProfile() {
+  const payload = JSON.parse(atob(token.split(".")[1]));
+  const userId = payload.id;
 
-// ⛔ userId না থাকলে কিছুই করবে না
-if (!userId) {
-  alert("User id missing");
-  throw new Error("User id missing in URL");
+  const res = await fetch(API + "/api/users/profile/" + userId, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+
+  document.getElementById("bio").value = data.user.bio || "";
+
+  if (data.user.profilePic) {
+    const img = document.getElementById("profilePic");
+    img.src = data.user.profilePic;
+    img.style.display = "block";
+  }
+
+  const postsDiv = document.getElementById("posts");
+  postsDiv.innerHTML = "";
+
+  data.posts.forEach(p => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "6px";
+    div.style.marginBottom = "8px";
+
+    div.innerHTML = `
+      <p>${p.content || ""}</p>
+      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
+    `;
+
+    postsDiv.appendChild(div);
+  });
 }
 
-async function loadProfile() {
-  try {
-    const res = await fetch(API + "/api/users/profile/" + userId, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
+async function updateProfile() {
+  const bio = document.getElementById("bio").value.trim();
+  const file = document.getElementById("profilePicInput").files[0];
+
+  let profilePicUrl = null;
+
+  // upload profile pic
+  if (file) {
+    const fd = new FormData();
+    fd.append("image", file);
+
+    const res = await fetch(API + "/api/media/image", {
+      method: "POST",
+      body: fd
     });
 
-    if (!res.ok) {
-      alert("Failed to load profile");
+    const data = await res.json();
+    if (!data.imageUrl) {
+      alert("Profile pic upload failed");
       return;
     }
 
-    const data = await res.json();
-
-    // ===== USER INFO =====
-    const nameEl = document.getElementById("name");
-    const emailEl = document.getElementById("email");
-    const bioEl = document.getElementById("bio");
-    const imgEl = document.getElementById("profilePic");
-
-    if (nameEl) nameEl.innerText = data.user.name || "";
-    if (emailEl) emailEl.innerText = data.user.email || "";
-    if (bioEl) bioEl.innerText = data.user.bio || "";
-
-    if (imgEl && data.user.profilePic) {
-      imgEl.src = data.user.profilePic;
-      imgEl.style.display = "block";
-    }
-
-    // ===== POSTS =====
-    const postsDiv = document.getElementById("posts");
-    if (!postsDiv) return;
-
-    postsDiv.innerHTML = "";
-
-    data.posts.forEach(p => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.marginBottom = "10px";
-      div.style.padding = "6px";
-
-      div.innerHTML = `
-        <p>${p.content || ""}</p>
-
-        ${p.image ? `
-          <img src="${p.image}" style="max-width:100%;margin-top:6px">
-        ` : ""}
-
-        ${p.video ? `
-          <video controls style="max-width:100%;margin-top:6px">
-            <source src="${p.video}" type="video/mp4">
-          </video>
-        ` : ""}
-      `;
-
-      postsDiv.appendChild(div);
-    });
-
-  } catch (err) {
-    console.error("PROFILE LOAD ERROR:", err);
-    alert("Something went wrong loading profile");
+    profilePicUrl = data.imageUrl;
   }
+
+  await fetch(API + "/api/users/profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      bio,
+      profilePic: profilePicUrl
+    })
+  });
+
+  alert("Profile updated");
+  loadProfile();
 }
 
-// 🚀 INIT
 loadProfile();
