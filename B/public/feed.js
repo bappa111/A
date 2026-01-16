@@ -99,7 +99,9 @@ async function loadFeed() {
     div.style.marginBottom = "12px";
 
     div.innerHTML = `
-      <b>${p.userId?.name || "User"}</b>
+      <a href="profile.html?id=${p.userId._id}">
+        <b>${p.userId.name}</b>
+      </a>
       <p>${p.content || ""}</p>
 
       ${p.image ? `

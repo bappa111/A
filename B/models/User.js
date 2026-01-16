@@ -21,6 +21,16 @@ const UserSchema = new mongoose.Schema(
       required: true
     },
 
+    profilePic: {
+      type: String,
+      default: null
+    },
+
+    bio: {
+      type: String,
+      default: ""
+    },
+
     isOnline: {
       type: Boolean,
       default: false
