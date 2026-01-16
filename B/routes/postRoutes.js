@@ -25,7 +25,7 @@ router.post("/", auth, async (req, res) => {
 ====================== */
 router.get("/", auth, async (req, res) => {
   const posts = await Post.find()
-    .populate("userId", "name")
+    .populate("userId", "name profilePic")
     .sort({ createdAt: -1 });
 
   res.json(posts);
