@@ -29,4 +29,20 @@ router.get("/profile/:id", auth, async (req, res) => {
   res.json({ user, posts });
 });
 
+// ✏️ UPDATE PROFILE (bio + profilePic)
+router.put("/profile", auth, async (req, res) => {
+  const { bio, profilePic } = req.body;
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    {
+      bio: bio || "",
+      profilePic: profilePic || null
+    },
+    { new: true }
+  ).select("name email bio profilePic");
+
+  res.json(user);
+});
+
 module.exports = router;
