@@ -66,4 +66,18 @@ router.post("/:id/comment", auth, async (req, res) => {
   res.json(post.comments);
 });
 
+// 🗑️ DELETE POST (only owner)
+router.delete("/:id", auth, async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) return res.status(404).json({ msg: "Post not found" });
+
+  // only owner can delete
+  if (post.userId.toString() !== req.user.id) {
+    return res.status(403).json({ msg: "Not allowed" });
+  }
+
+  await post.deleteOne();
+  res.json({ msg: "Post deleted" });
+});
+
 module.exports = router;

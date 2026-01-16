@@ -2,6 +2,17 @@ const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
 /* ======================
+   HELPERS
+====================== */
+function getMyUserId() {
+  try {
+    return JSON.parse(atob(token.split(".")[1])).id;
+  } catch {
+    return null;
+  }
+}
+
+/* ======================
    CREATE POST
 ====================== */
 async function createPost() {
@@ -27,7 +38,8 @@ async function createPost() {
     });
 
     const data = await res.json();
-    imageUrl = data.imageUrl || null;
+    if (!data.imageUrl) return alert("Image upload failed");
+    imageUrl = data.imageUrl;
   }
 
   // VIDEO UPLOAD
@@ -41,7 +53,8 @@ async function createPost() {
     });
 
     const data = await res.json();
-    videoUrl = data.videoUrl || null;
+    if (!data.videoUrl) return alert("Video upload failed");
+    videoUrl = data.videoUrl;
   }
 
   // CREATE POST
@@ -77,6 +90,8 @@ async function loadFeed() {
   const feed = document.getElementById("feed");
   feed.innerHTML = "";
 
+  const myId = getMyUserId();
+
   posts.forEach(p => {
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
@@ -101,6 +116,14 @@ async function loadFeed() {
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
+
+        ${
+          p.userId?._id === myId
+            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">
+                🗑️ Delete
+               </button>`
+            : ""
+        }
       </div>
 
       <div style="margin-top:6px">
@@ -136,7 +159,7 @@ async function toggleLike(postId) {
     }
   });
 
-  loadFeed(); // ✅ MUST
+  loadFeed();
 }
 
 /* ======================
@@ -160,5 +183,21 @@ async function addComment(postId) {
   loadFeed();
 }
 
-// 🔥 INITIAL LOAD
+/* ======================
+   DELETE POST (ONLY OWNER)
+====================== */
+async function deletePost(postId) {
+  await fetch(API + "/api/posts/" + postId, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  loadFeed();
+}
+
+/* ======================
+   INITIAL LOAD
+====================== */
 loadFeed();
