@@ -16,7 +16,7 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
-  // IMAGE
+  // IMAGE UPLOAD
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -30,7 +30,7 @@ async function createPost() {
     imageUrl = data.imageUrl || null;
   }
 
-  // VIDEO
+  // VIDEO UPLOAD
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -44,6 +44,7 @@ async function createPost() {
     videoUrl = data.videoUrl || null;
   }
 
+  // CREATE POST
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -63,8 +64,9 @@ async function createPost() {
 
   loadFeed();
 }
+
 /* ======================
-   LOAD FEED  ✅ THIS WAS MISSING
+   LOAD FEED
 ====================== */
 async function loadFeed() {
   const res = await fetch(API + "/api/posts", {
@@ -79,29 +81,84 @@ async function loadFeed() {
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
-    div.style.marginBottom = "10px";
+    div.style.marginBottom = "12px";
 
     div.innerHTML = `
-  <b>${p.userId?.name || "User"}</b>
-  <p>${p.content || ""}</p>
+      <b>${p.userId?.name || "User"}</b>
+      <p>${p.content || ""}</p>
 
-  ${p.image ? `
-    <img src="${p.image}" style="max-width:100%;margin-top:6px" />
-  ` : ""}
+      ${p.image ? `
+        <img src="${p.image}" style="max-width:100%;margin-top:6px" />
+      ` : ""}
 
-  ${p.video ? `
-    <video controls style="max-width:100%;margin-top:6px">
-      <source src="${p.video}">
-    </video>
-  ` : ""}
+      ${p.video ? `
+        <video controls style="max-width:100%;margin-top:6px">
+          <source src="${p.video}" type="video/mp4">
+        </video>
+      ` : ""}
 
-  <button>👍 Like</button>
-  <button>💬 Comment</button>
-`;
+      <div style="margin-top:6px">
+        <button onclick="toggleLike('${p._id}')">
+          👍 Like (${p.likes?.length || 0})
+        </button>
+      </div>
+
+      <div style="margin-top:6px">
+        ${(p.comments || []).map(c => `
+          <div style="margin-left:10px;font-size:14px">
+            💬 ${c.text}
+          </div>
+        `).join("")}
+      </div>
+
+      <div style="margin-top:6px">
+        <input
+          placeholder="Write comment..."
+          id="c-${p._id}"
+          style="width:70%"
+        />
+        <button onclick="addComment('${p._id}')">Send</button>
+      </div>
+    `;
 
     feed.appendChild(div);
   });
 }
 
-// 🔥 VERY IMPORTANT
+/* ======================
+   LIKE / UNLIKE
+====================== */
+async function toggleLike(postId) {
+  await fetch(API + "/api/posts/" + postId + "/like", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  loadFeed(); // ✅ MUST
+}
+
+/* ======================
+   ADD COMMENT
+====================== */
+async function addComment(postId) {
+  const input = document.getElementById("c-" + postId);
+  const text = input.value.trim();
+  if (!text) return;
+
+  await fetch(API + "/api/posts/" + postId + "/comment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ text })
+  });
+
+  input.value = "";
+  loadFeed();
+}
+
+// 🔥 INITIAL LOAD
 loadFeed();

@@ -31,4 +31,39 @@ router.get("/", auth, async (req, res) => {
   res.json(posts);
 });
 
+// 👍 LIKE / UNLIKE POST
+router.post("/:id/like", auth, async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) return res.status(404).json({ msg: "Post not found" });
+
+  const userId = req.user.id;
+
+  const index = post.likes.indexOf(userId);
+
+  if (index === -1) {
+    // like
+    post.likes.push(userId);
+  } else {
+    // unlike
+    post.likes.splice(index, 1);
+  }
+
+  await post.save();
+  res.json({ likes: post.likes.length });
+});
+
+// 💬 ADD COMMENT
+router.post("/:id/comment", auth, async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) return res.status(404).json({ msg: "Post not found" });
+
+  post.comments.push({
+    userId: req.user.id,
+    text: req.body.text
+  });
+
+  await post.save();
+  res.json(post.comments);
+});
+
 module.exports = router;
