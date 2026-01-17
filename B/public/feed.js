@@ -2,6 +2,19 @@ const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
 /* ======================
+   FOLLOWED BY BADGE
+====================== */
+function renderFollowedBy(p) {
+  if (!p.followedBy || p.followedBy.length === 0) return "";
+
+  return `
+    <div style="margin-left:40px;font-size:12px;color:#666">
+      Followed by ${p.followedBy.length} person${p.followedBy.length > 1 ? "s" : ""}
+    </div>
+  `;
+}
+
+/* ======================
    HELPERS
 ====================== */
 function getMyUserId() {
@@ -27,6 +40,7 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
+  // IMAGE
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -41,6 +55,7 @@ async function createPost() {
     imageUrl = data.imageUrl;
   }
 
+  // VIDEO
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -108,40 +123,29 @@ async function loadFeed() {
         <b>${p.userId?.name || "User"}</b>
       </div>
 
-      ${
-        p.followedBy && p.followedBy.length > 0
-          ? `<div style="margin-left:40px;font-size:12px;color:#666">
-              Followed by ${p.followedBy.join(", ")}
-            </div>`
-          : ""
-      }
+      ${renderFollowedBy(p)}
 
       <p>${p.content || ""}</p>
 
-      ${
-        p.image
-          ? `<img src="${p.image}" style="max-width:100%;margin-top:6px" />`
-          : ""
-      }
+      ${p.image ? `
+        <img src="${p.image}" style="max-width:100%;margin-top:6px" />
+      ` : ""}
 
-      ${
-        p.video
-          ? `<video controls style="max-width:100%;margin-top:6px">
-               <source src="${p.video}" type="video/mp4">
-             </video>`
-          : ""
-      }
+      ${p.video ? `
+        <video controls style="max-width:100%;margin-top:6px">
+          <source src="${p.video}" type="video/mp4">
+        </video>
+      ` : ""}
 
-      <!-- ACTION BAR (✅ FIXED PLACE) -->
-      <div style="margin-top:6px;display:flex;align-items:center;gap:10px">
+      <!-- ACTION BAR -->
+      <div style="margin-top:6px;display:flex;gap:10px">
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
 
-        ${
-          p.userId._id === myId
-            ? `<button onclick="deletePost('${p._id}')" style="color:red">🗑️ Delete</button>`
-            : ""
+        ${p.userId._id === myId
+          ? `<button onclick="deletePost('${p._id}')" style="color:red">🗑️ Delete</button>`
+          : ""
         }
       </div>
 

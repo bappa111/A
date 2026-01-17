@@ -1,12 +1,11 @@
 const express = require("express");
 const Post = require("../models/Post");
-const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 /* ======================
-   CREATE POST (text / image / video)
+   CREATE POST
 ====================== */
 router.post("/", auth, async (req, res) => {
   const { content, image, video } = req.body;
@@ -22,7 +21,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 /* ======================
-   GET FEED (with followedBy badge data)
+   GET FEED (FOLLOWED BY BADGE DATA)
 ====================== */
 router.get("/", auth, async (req, res) => {
   const myId = req.user.id;
@@ -32,11 +31,10 @@ router.get("/", auth, async (req, res) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  const formattedPosts = posts.map(p => {
-    // followers of post owner (except me)
+  const formatted = posts.map(p => {
     const followedBy = (p.userId.followers || [])
       .filter(fid => fid.toString() !== myId)
-      .slice(0, 2); // UI clean (max 2)
+      .slice(0, 2);
 
     return {
       ...p,
@@ -44,11 +42,11 @@ router.get("/", auth, async (req, res) => {
     };
   });
 
-  res.json(formattedPosts);
+  res.json(formatted);
 });
 
 /* ======================
-   LIKE / UNLIKE POST
+   LIKE / UNLIKE
 ====================== */
 router.post("/:id/like", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
@@ -57,11 +55,8 @@ router.post("/:id/like", auth, async (req, res) => {
   const userId = req.user.id;
   const index = post.likes.indexOf(userId);
 
-  if (index === -1) {
-    post.likes.push(userId);
-  } else {
-    post.likes.splice(index, 1);
-  }
+  if (index === -1) post.likes.push(userId);
+  else post.likes.splice(index, 1);
 
   await post.save();
   res.json({ likes: post.likes.length });
@@ -84,7 +79,7 @@ router.post("/:id/comment", auth, async (req, res) => {
 });
 
 /* ======================
-   DELETE POST (only owner)
+   DELETE POST
 ====================== */
 router.delete("/:id", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
