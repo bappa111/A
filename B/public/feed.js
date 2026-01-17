@@ -9,7 +9,7 @@ function renderFollowedBy(p) {
 
   return `
     <div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${p.followedBy.length} person${p.followedBy.length > 1 ? "s" : ""}
+      Followed by ${p.followedBy.join(", ")}
     </div>
   `;
 }

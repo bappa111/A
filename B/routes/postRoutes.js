@@ -27,14 +27,16 @@ router.get("/", auth, async (req, res) => {
   const myId = req.user.id;
 
   const posts = await Post.find()
-    .populate("userId", "name profilePic followers")
+    .populate("userId", "name profilePic")
+    .populate("userId.followers", "name") // 🔥 FOLLOWER NAME আনছি
     .sort({ createdAt: -1 })
     .lean();
 
   const formatted = posts.map(p => {
     const followedBy = (p.userId.followers || [])
-      .filter(fid => fid.toString() !== myId)
-      .slice(0, 2);
+      .filter(u => u._id.toString() !== myId)
+      .slice(0, 2) // max 2 names
+      .map(u => u.name); // ✅ NAME ONLY
 
     return {
       ...p,
