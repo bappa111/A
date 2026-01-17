@@ -94,4 +94,24 @@ router.post("/follow/:id", auth, async (req, res) => {
   res.json({ followed: true });
 });
 
+// 👥 GET FOLLOWERS LIST
+router.get("/:id/followers", auth, async (req, res) => {
+  const user = await User.findById(req.params.id)
+    .populate("followers", "name profilePic");
+
+  if (!user) return res.status(404).json({ msg: "User not found" });
+
+  res.json(user.followers);
+});
+
+// 👥 GET FOLLOWING LIST
+router.get("/:id/following", auth, async (req, res) => {
+  const user = await User.findById(req.params.id)
+    .populate("following", "name profilePic");
+
+  if (!user) return res.status(404).json({ msg: "User not found" });
+
+  res.json(user.following);
+});
+
 module.exports = router;

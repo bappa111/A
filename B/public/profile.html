@@ -10,6 +10,18 @@
 
 <textarea id="bio" placeholder="Write bio..."></textarea><br><br>
 
+<div style="margin-top:10px">
+  <span onclick="openFollowers()" style="cursor:pointer">
+    👥 Followers (<span id="followersCount">0</span>)
+  </span>
+  |
+  <span onclick="openFollowing()" style="cursor:pointer">
+    ➡️ Following (<span id="followingCount">0</span>)
+  </span>
+</div>
+
+<div id="followList" style="margin-top:10px"></div>
+
 <button onclick="updateProfile()">Save</button>
 
 <hr>

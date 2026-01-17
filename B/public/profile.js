@@ -1,7 +1,9 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
-// 🔑 logged-in user id
+/* ======================
+   HELPERS
+====================== */
 function getMyId() {
   try {
     return JSON.parse(atob(token.split(".")[1])).id;
@@ -10,11 +12,16 @@ function getMyId() {
   }
 }
 
-// 🔑 profile user id (URL > fallback to own)
+/* ======================
+   IDS
+====================== */
 const params = new URLSearchParams(window.location.search);
 const profileUserId = params.get("id") || getMyId();
 const myId = getMyId();
 
+/* ======================
+   LOAD PROFILE
+====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
@@ -26,9 +33,7 @@ async function loadProfile() {
     return;
   }
 
-  /* ======================
-     USER INFO
-  ====================== */
+  /* USER INFO */
   const bioInput = document.getElementById("bio");
   bioInput.value = data.user.bio || "";
 
@@ -36,9 +41,13 @@ async function loadProfile() {
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   img.style.display = "block";
 
-  /* ======================
-     EDIT PERMISSION
-  ====================== */
+  /* FOLLOW COUNTS */
+  document.getElementById("followersCount").innerText =
+    data.user.followersCount || 0;
+  document.getElementById("followingCount").innerText =
+    data.user.followingCount || 0;
+
+  /* BUTTONS */
   const saveBtn = document.getElementById("saveBtn");
   const followBtn = document.getElementById("followBtn");
 
@@ -48,9 +57,6 @@ async function loadProfile() {
     if (saveBtn) saveBtn.style.display = "none";
   }
 
-  /* ======================
-     FOLLOW / UNFOLLOW LOGIC  ✅ FIXED (INSIDE FUNCTION)
-  ====================== */
   if (followBtn) {
     if (profileUserId === myId) {
       followBtn.style.display = "none";
@@ -70,9 +76,7 @@ async function loadProfile() {
     }
   }
 
-  /* ======================
-     POSTS
-  ====================== */
+  /* POSTS */
   const postsDiv = document.getElementById("posts");
   postsDiv.innerHTML = "";
 
@@ -97,7 +101,7 @@ async function loadProfile() {
 }
 
 /* ======================
-   UPDATE PROFILE (ONLY OWN)
+   UPDATE PROFILE
 ====================== */
 async function updateProfile() {
   if (profileUserId !== myId) return;
@@ -142,19 +146,54 @@ async function updateProfile() {
 async function toggleFollow() {
   if (profileUserId === myId) return;
 
-  const res = await fetch(API + "/api/users/follow/" + profileUserId, {
+  await fetch(API + "/api/users/follow/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  const data = await res.json();
-  document.getElementById("followBtn").innerText =
-    data.followed ? "Unfollow" : "Follow";
-
-  loadProfile();
+  loadProfile(); // ✅ ONLY source of truth
 }
 
 /* ======================
-   INITIAL LOAD
+   FOLLOW LIST
+====================== */
+async function openFollowers() {
+  const res = await fetch(API + "/api/users/" + profileUserId + "/followers", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const users = await res.json();
+  renderFollowList(users, "Followers");
+}
+
+async function openFollowing() {
+  const res = await fetch(API + "/api/users/" + profileUserId + "/following", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const users = await res.json();
+  renderFollowList(users, "Following");
+}
+
+function renderFollowList(users, title) {
+  const div = document.getElementById("followList");
+  div.innerHTML = `<h4>${title}</h4>`;
+
+  users.forEach(u => {
+    div.innerHTML += `
+      <div
+        style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px"
+        onclick="location.href='profile.html?id=${u._id}'"
+      >
+        <img
+          src="${u.profilePic || 'https://via.placeholder.com/32'}"
+          style="width:32px;height:32px;border-radius:50%"
+        />
+        <b>${u.name}</b>
+      </div>
+    `;
+  });
+}
+
+/* ======================
+   INIT
 ====================== */
 loadProfile();
