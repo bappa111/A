@@ -27,7 +27,7 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
-  // IMAGE
+  // IMAGE UPLOAD
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -42,7 +42,7 @@ async function createPost() {
     imageUrl = data.imageUrl;
   }
 
-  // VIDEO
+  // VIDEO UPLOAD
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -57,6 +57,7 @@ async function createPost() {
     videoUrl = data.videoUrl;
   }
 
+  // CREATE POST
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -98,7 +99,7 @@ async function loadFeed() {
     div.style.marginBottom = "12px";
 
     div.innerHTML = `
-      <!-- USER HEADER (✅ FIXED, NO <a> TAG) -->
+      <!-- USER HEADER -->
       <div
         style="display:flex;align-items:center;gap:8px;cursor:pointer"
         onclick="goProfile('${p.userId._id}')"
@@ -128,10 +129,8 @@ async function loadFeed() {
         </button>
 
         ${
-          p.userId?._id === myId
-            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">
-                🗑️ Delete
-              </button>`
+          p.userId._id === myId
+            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">🗑️ Delete</button>`
             : ""
         }
       </div>
@@ -202,7 +201,7 @@ async function deletePost(postId) {
 }
 
 /* ======================
-   GO TO PROFILE (✅ SINGLE SOURCE)
+   GO TO PROFILE
 ====================== */
 function goProfile(userId) {
   if (!userId) return;
