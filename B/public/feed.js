@@ -27,6 +27,7 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
+  // IMAGE
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -41,6 +42,7 @@ async function createPost() {
     imageUrl = data.imageUrl;
   }
 
+  // VIDEO
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -96,16 +98,17 @@ async function loadFeed() {
     div.style.marginBottom = "12px";
 
     div.innerHTML = `
-      <!-- USER HEADER -->
-      <a href="profile.html?id=${p.userId._id}" style="text-decoration:none;color:inherit">
-        <div style="display:flex;align-items:center;gap:8px">
-          <img
-            src="${p.userId?.profilePic || 'https://via.placeholder.com/32'}"
-            style="width:32px;height:32px;border-radius:50%;object-fit:cover"
-          />
-          <b>${p.userId?.name || "User"}</b>
-        </div>
-      </a>
+      <!-- USER HEADER (✅ FIXED, NO <a> TAG) -->
+      <div
+        style="display:flex;align-items:center;gap:8px;cursor:pointer"
+        onclick="goProfile('${p.userId._id}')"
+      >
+        <img
+          src="${p.userId?.profilePic || 'https://via.placeholder.com/32'}"
+          style="width:32px;height:32px;border-radius:50%;object-fit:cover"
+        />
+        <b>${p.userId?.name || "User"}</b>
+      </div>
 
       <p>${p.content || ""}</p>
 
@@ -126,7 +129,9 @@ async function loadFeed() {
 
         ${
           p.userId?._id === myId
-            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">🗑️ Delete</button>`
+            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">
+                🗑️ Delete
+              </button>`
             : ""
         }
       </div>
@@ -194,6 +199,14 @@ async function deletePost(postId) {
     headers: { Authorization: "Bearer " + token }
   });
   loadFeed();
+}
+
+/* ======================
+   GO TO PROFILE (✅ SINGLE SOURCE)
+====================== */
+function goProfile(userId) {
+  if (!userId) return;
+  location.href = "profile.html?id=" + userId;
 }
 
 /* ======================
