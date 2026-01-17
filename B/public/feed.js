@@ -7,9 +7,25 @@ const token = localStorage.getItem("token");
 function renderFollowedBy(p) {
   if (!p.followedBy || p.followedBy.length === 0) return "";
 
+  if (p.followedBy.length === 1) {
+    return `
+      <div style="margin-left:40px;font-size:12px;color:#666">
+        Followed by ${p.followedBy[0]}
+      </div>
+    `;
+  }
+
+  if (p.followedBy.length === 2) {
+    return `
+      <div style="margin-left:40px;font-size:12px;color:#666">
+        Followed by ${p.followedBy[0]}, ${p.followedBy[1]}
+      </div>
+    `;
+  }
+
   return `
     <div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${p.followedBy.join(", ")}
+      Followed by ${p.followedBy[0]} and ${p.followedBy.length - 1} others
     </div>
   `;
 }
