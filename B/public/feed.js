@@ -110,11 +110,9 @@ async function loadFeed() {
 
       ${
         p.followedBy && p.followedBy.length > 0
-          ? `
-        <div style="margin-left:40px;font-size:12px;color:#666">
-          Followed by ${p.followedBy.join(", ")}
-        </div>
-        `
+          ? `<div style="margin-left:40px;font-size:12px;color:#666">
+              Followed by ${p.followedBy.join(", ")}
+            </div>`
           : ""
       }
 
@@ -128,38 +126,35 @@ async function loadFeed() {
 
       ${
         p.video
-          ? `
-        <video controls style="max-width:100%;margin-top:6px">
-          <source src="${p.video}" type="video/mp4">
-        </video>
-      `
+          ? `<video controls style="max-width:100%;margin-top:6px">
+               <source src="${p.video}" type="video/mp4">
+             </video>`
           : ""
       }
 
-      <div style="margin-top:6px">
+      <!-- ACTION BAR (✅ FIXED PLACE) -->
+      <div style="margin-top:6px;display:flex;align-items:center;gap:10px">
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
 
         ${
           p.userId._id === myId
-            ? `<button onclick="deletePost('${p._id}')" style="color:red;margin-left:10px">🗑️ Delete</button>`
+            ? `<button onclick="deletePost('${p._id}')" style="color:red">🗑️ Delete</button>`
             : ""
         }
       </div>
 
+      <!-- COMMENTS -->
       <div style="margin-top:6px">
-        ${(p.comments || [])
-          .map(
-            c => `
+        ${(p.comments || []).map(c => `
           <div style="margin-left:10px;font-size:14px">
             💬 ${c.text}
           </div>
-        `
-          )
-          .join("")}
+        `).join("")}
       </div>
 
+      <!-- ADD COMMENT -->
       <div style="margin-top:6px">
         <input
           placeholder="Write comment..."
