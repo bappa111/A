@@ -26,21 +26,53 @@ async function loadProfile() {
     return;
   }
 
-  // USER INFO
-  document.getElementById("bio").value = data.user.bio || "";
+  /* ======================
+     USER INFO
+  ====================== */
+  const bioInput = document.getElementById("bio");
+  bioInput.value = data.user.bio || "";
 
   const img = document.getElementById("profilePic");
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   img.style.display = "block";
 
-  // ❌ অন্য user হলে edit বন্ধ
+  /* ======================
+     EDIT PERMISSION
+  ====================== */
+  const saveBtn = document.getElementById("saveBtn");
+  const followBtn = document.getElementById("followBtn");
+
   if (profileUserId !== myId) {
-    document.getElementById("bio").disabled = true;
+    bioInput.disabled = true;
     document.getElementById("profilePicInput").style.display = "none";
-    document.querySelector("button").style.display = "none"; // Save button
+    if (saveBtn) saveBtn.style.display = "none";
   }
 
-  // POSTS
+  /* ======================
+     FOLLOW / UNFOLLOW LOGIC  ✅ FIXED (INSIDE FUNCTION)
+  ====================== */
+  if (followBtn) {
+    if (profileUserId === myId) {
+      followBtn.style.display = "none";
+    } else {
+      followBtn.style.display = "inline-block";
+
+      const meRes = await fetch(API + "/api/users/profile/" + myId, {
+        headers: { Authorization: "Bearer " + token }
+      });
+      const meData = await meRes.json();
+
+      const isFollowing =
+        meData.user.following &&
+        meData.user.following.includes(profileUserId);
+
+      followBtn.innerText = isFollowing ? "Unfollow" : "Follow";
+    }
+  }
+
+  /* ======================
+     POSTS
+  ====================== */
   const postsDiv = document.getElementById("posts");
   postsDiv.innerHTML = "";
 
@@ -64,6 +96,9 @@ async function loadProfile() {
   });
 }
 
+/* ======================
+   UPDATE PROFILE (ONLY OWN)
+====================== */
 async function updateProfile() {
   if (profileUserId !== myId) return;
 
@@ -101,4 +136,25 @@ async function updateProfile() {
   loadProfile();
 }
 
+/* ======================
+   FOLLOW / UNFOLLOW
+====================== */
+async function toggleFollow() {
+  if (profileUserId === myId) return;
+
+  const res = await fetch(API + "/api/users/follow/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+  document.getElementById("followBtn").innerText =
+    data.followed ? "Unfollow" : "Follow";
+
+  loadProfile();
+}
+
+/* ======================
+   INITIAL LOAD
+====================== */
 loadProfile();

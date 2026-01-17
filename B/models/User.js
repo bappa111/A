@@ -31,6 +31,20 @@ const UserSchema = new mongoose.Schema(
       default: ""
     },
 
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+
     isOnline: {
       type: Boolean,
       default: false
