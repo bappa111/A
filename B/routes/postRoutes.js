@@ -23,12 +23,36 @@ router.post("/", auth, async (req, res) => {
 /* ======================
    GET FEED
 ====================== */
+const User = require("../models/User");
+
 router.get("/", auth, async (req, res) => {
+  const myId = req.user.id;
+
+  // আমি কাদের follow করি
+  const me = await User.findById(myId).select("following");
+
   const posts = await Post.find()
-    .populate("userId", "name profilePic")
+    .populate("userId", "name profilePic followers")
     .sort({ createdAt: -1 });
 
-  res.json(posts);
+  const feed = posts.map(p => {
+    const postOwner = p.userId;
+
+    // post owner কে যারা follow করে
+    const ownerFollowers = postOwner.followers.map(id => id.toString());
+
+    // আমার following এর মধ্যে কারা owner কে follow করে
+    const mutualIds = me.following.filter(id =>
+      ownerFollowers.includes(id.toString())
+    );
+
+    return {
+      ...p.toObject(),
+      followedBy: mutualIds.slice(0, 2) // max 2 জন
+    };
+  });
+
+  res.json(feed);
 });
 
 // 👍 LIKE / UNLIKE POST

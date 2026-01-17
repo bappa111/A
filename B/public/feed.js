@@ -27,7 +27,6 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
-  // IMAGE UPLOAD
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -42,7 +41,6 @@ async function createPost() {
     imageUrl = data.imageUrl;
   }
 
-  // VIDEO UPLOAD
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -57,7 +55,6 @@ async function createPost() {
     videoUrl = data.videoUrl;
   }
 
-  // CREATE POST
   await fetch(API + "/api/posts", {
     method: "POST",
     headers: {
@@ -111,17 +108,33 @@ async function loadFeed() {
         <b>${p.userId?.name || "User"}</b>
       </div>
 
+      ${
+        p.followedBy && p.followedBy.length > 0
+          ? `
+        <div style="margin-left:40px;font-size:12px;color:#666">
+          Followed by ${p.followedBy.join(", ")}
+        </div>
+        `
+          : ""
+      }
+
       <p>${p.content || ""}</p>
 
-      ${p.image ? `
-        <img src="${p.image}" style="max-width:100%;margin-top:6px" />
-      ` : ""}
+      ${
+        p.image
+          ? `<img src="${p.image}" style="max-width:100%;margin-top:6px" />`
+          : ""
+      }
 
-      ${p.video ? `
+      ${
+        p.video
+          ? `
         <video controls style="max-width:100%;margin-top:6px">
           <source src="${p.video}" type="video/mp4">
         </video>
-      ` : ""}
+      `
+          : ""
+      }
 
       <div style="margin-top:6px">
         <button onclick="toggleLike('${p._id}')">
@@ -136,11 +149,15 @@ async function loadFeed() {
       </div>
 
       <div style="margin-top:6px">
-        ${(p.comments || []).map(c => `
+        ${(p.comments || [])
+          .map(
+            c => `
           <div style="margin-left:10px;font-size:14px">
             💬 ${c.text}
           </div>
-        `).join("")}
+        `
+          )
+          .join("")}
       </div>
 
       <div style="margin-top:6px">
