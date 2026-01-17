@@ -366,3 +366,16 @@ if (token && location.pathname.includes("chat.html")) {
   socket.on("private-message", loadMessages);
   loadUsers();
 }
+
+/* ======================
+   OPEN CHAT FROM PROFILE (DM)
+====================== */
+if (token && location.pathname.includes("chat.html")) {
+  const params = new URLSearchParams(location.search);
+  const otherUserId = params.get("userId");
+
+  if (otherUserId) {
+    // existing chat system reuse
+    openChat({ _id: otherUserId, name: "User" });
+  }
+}

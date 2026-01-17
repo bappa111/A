@@ -28,12 +28,27 @@ async function loadProfile() {
   });
 
   const data = await res.json();
+
   if (!data.user) {
     alert("User not found");
     return;
   }
 
-  /* USER INFO */
+  /* ======================
+     CHAT BUTTON (DM)
+  ====================== */
+  const chatBtn = document.getElementById("chatBtn");
+  if (chatBtn) {
+    if (profileUserId === myId) {
+      chatBtn.style.display = "none"; // নিজের profile
+    } else {
+      chatBtn.style.display = "inline-block"; // অন্য user
+    }
+  }
+
+  /* ======================
+     USER INFO
+  ====================== */
   const bioInput = document.getElementById("bio");
   bioInput.value = data.user.bio || "";
 
@@ -41,22 +56,31 @@ async function loadProfile() {
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   img.style.display = "block";
 
-  /* FOLLOW COUNTS */
-  document.getElementById("followersCount").innerText =
-    data.user.followersCount || 0;
-  document.getElementById("followingCount").innerText =
-    data.user.followingCount || 0;
+  /* ======================
+     FOLLOW COUNTS
+  ====================== */
+  const followersCount = document.getElementById("followersCount");
+  const followingCount = document.getElementById("followingCount");
 
-  /* BUTTONS */
+  if (followersCount) followersCount.innerText = data.user.followersCount || 0;
+  if (followingCount) followingCount.innerText = data.user.followingCount || 0;
+
+  /* ======================
+     BUTTON PERMISSIONS
+  ====================== */
   const saveBtn = document.getElementById("saveBtn");
   const followBtn = document.getElementById("followBtn");
 
   if (profileUserId !== myId) {
     bioInput.disabled = true;
-    document.getElementById("profilePicInput").style.display = "none";
+    const picInput = document.getElementById("profilePicInput");
+    if (picInput) picInput.style.display = "none";
     if (saveBtn) saveBtn.style.display = "none";
   }
 
+  /* ======================
+     FOLLOW / UNFOLLOW BUTTON
+  ====================== */
   if (followBtn) {
     if (profileUserId === myId) {
       followBtn.style.display = "none";
@@ -76,7 +100,9 @@ async function loadProfile() {
     }
   }
 
-  /* POSTS */
+  /* ======================
+     POSTS
+  ====================== */
   const postsDiv = document.getElementById("posts");
   postsDiv.innerHTML = "";
 
@@ -151,7 +177,7 @@ async function toggleFollow() {
     headers: { Authorization: "Bearer " + token }
   });
 
-  loadProfile(); // ✅ ONLY source of truth
+  loadProfile();
 }
 
 /* ======================
@@ -191,6 +217,14 @@ function renderFollowList(users, title) {
       </div>
     `;
   });
+}
+
+/* ======================
+   OPEN DM (PROFILE → CHAT)
+====================== */
+function openDM() {
+  if (!profileUserId) return;
+  location.href = "chat.html?userId=" + profileUserId;
 }
 
 /* ======================
