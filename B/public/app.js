@@ -38,6 +38,34 @@ async function login() {
   location.href = "feed.html";
 }
 
+//registered//
+async function register() {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!name || !email || !password) {
+    alert("All fields required");
+    return;
+  }
+
+  const res = await fetch("https://a-kisk.onrender.com/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.msg || "Register failed");
+    return;
+  }
+
+  alert("Registered successfully. Login now.");
+  location.href = "index.html";
+}
+
 /* ======================
    LOAD USERS
 ====================== */
