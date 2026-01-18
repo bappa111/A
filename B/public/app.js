@@ -93,8 +93,7 @@ function openChat(user) {
   const h = document.getElementById("chatWith");
   if (h) h.innerText = "Chat with " + (user.name || "User");
 
-  markSeen();     // ✅ IMPORTANT
-  loadMessages();
+  markSeen();     // ✅ IMPORTANT//
 }
 
 /* ======================
@@ -175,6 +174,13 @@ async function markSeen() {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
+
+  // 🔥 notify sender in real-time
+  if (socket) {
+    socket.emit("message-seen", {
+      senderId: currentUser._id
+    });
+  }
 }
 
 /* ======================
@@ -242,6 +248,9 @@ if (token && location.pathname.includes("chat.html")) {
   const params = new URLSearchParams(location.search);
   const otherUserId = params.get("userId");
 
+  socket.on("message-seen", () => {
+  loadMessages();
+});
   if (otherUserId) {
     // 🔒 Profile → Direct chat //
     const usersDiv = document.getElementById("users");
