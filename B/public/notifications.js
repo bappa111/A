@@ -1,13 +1,8 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
-if (!token) {
-  location.href = "index.html";
-}
+if (!token) location.href = "index.html";
 
-/* ======================
-   LOAD NOTIFICATIONS
-====================== */
 async function loadNotifications() {
   const res = await fetch(API + "/api/notifications", {
     headers: { Authorization: "Bearer " + token }
@@ -17,7 +12,7 @@ async function loadNotifications() {
   const box = document.getElementById("notifications");
   box.innerHTML = "";
 
-  if (!notifications || notifications.length === 0) {
+  if (!notifications.length) {
     box.innerHTML = "<p>No notifications</p>";
     return;
   }
@@ -28,68 +23,47 @@ async function loadNotifications() {
     div.style.padding = "10px";
     div.style.marginBottom = "10px";
 
+    let actions = "";
+
+    if (n.type === "follow_request") {
+      actions = `
+        <button onclick="acceptFollow('${n.fromUser._id}', '${n._id}')">Accept</button>
+        <button onclick="rejectFollow('${n.fromUser._id}', '${n._id}')">Reject</button>
+      `;
+    } else {
+      actions = `<a href="${n.link || '#'}">Open</a>`;
+    }
+
     div.innerHTML = `
-      <div style="display:flex;gap:8px;align-items:center">
-        <img
-          src="${n.fromUser?.profilePic || "https://via.placeholder.com/32"}"
-          style="width:32px;height:32px;border-radius:50%"
-        />
-        <b>${n.fromUser?.name || "User"}</b>
-      </div>
-
-      <p style="margin:6px 0">${n.text}</p>
-
-      ${
-        n.type === "follow_request"
-          ? `
-            <button onclick="acceptFollow('${n.fromUser._id}', '${n._id}')">
-              ✅ Accept
-            </button>
-            <button onclick="rejectFollow('${n.fromUser._id}', '${n._id}')">
-              ❌ Reject
-            </button>
-          `
-          : `
-            <a href="${n.link || "#"}" onclick="markSeen('${n._id}')">
-              Open
-            </a>
-          `
-      }
+      <b>${n.fromUser?.name || "User"}</b>
+      <p>${n.text}</p>
+      ${actions}
     `;
 
     box.appendChild(div);
   });
 }
 
-/* ======================
-   ACCEPT FOLLOW REQUEST
-====================== */
-async function acceptFollow(userId, notificationId) {
+async function acceptFollow(userId, notifId) {
   await fetch(API + "/api/users/follow-accept/" + userId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  await markSeen(notificationId);
+  await markSeen(notifId);
   loadNotifications();
 }
 
-/* ======================
-   REJECT FOLLOW REQUEST
-====================== */
-async function rejectFollow(userId, notificationId) {
+async function rejectFollow(userId, notifId) {
   await fetch(API + "/api/users/follow-reject/" + userId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  await markSeen(notificationId);
+  await markSeen(notifId);
   loadNotifications();
 }
 
-/* ======================
-   MARK NOTIFICATION SEEN
-====================== */
 async function markSeen(id) {
   await fetch(API + "/api/notifications/seen/" + id, {
     method: "POST",
@@ -97,7 +71,4 @@ async function markSeen(id) {
   });
 }
 
-/* ======================
-   INIT
-====================== */
 loadNotifications();
