@@ -2,6 +2,51 @@
 <html>
 <body>
 
+<style>
+  .pd-item {
+    padding:10px;
+    cursor:pointer;
+  }
+  .pd-item:hover {
+    background:#f2f2f2;
+  }
+</style>
+
+<!-- HEADER -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #ccc;">
+  <h3>Feed</h3>
+
+  <!-- PROFILE DROPDOWN -->
+  <div style="position:relative;">
+    <img
+      id="profileMenuBtn"
+      src="https://via.placeholder.com/40"
+      style="width:40px;height:40px;border-radius:50%;cursor:pointer"
+    />
+
+    <div
+      id="profileDropdown"
+      style="
+        display:none;
+        position:absolute;
+        right:0;
+        top:45px;
+        background:#fff;
+        border:1px solid #ccc;
+        border-radius:6px;
+        min-width:160px;
+        box-shadow:0 4px 10px rgba(0,0,0,0.15);
+        z-index:1000;
+      "
+    >
+      <div class="pd-item" onclick="goMyProfile()">👤 My Profile</div>
+      <div class="pd-item">⚙️ Settings</div>
+      <div class="pd-item">❓ Help</div>
+      <div class="pd-item" onclick="logout()">🚪 Logout</div>
+    </div>
+  </div>
+</div>
+
 <!-- 🔝 TOP BAR -->
 <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ccc">
   <b>MyApp</b>

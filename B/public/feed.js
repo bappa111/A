@@ -56,7 +56,6 @@ async function createPost() {
   let imageUrl = null;
   let videoUrl = null;
 
-  // IMAGE
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
@@ -71,7 +70,6 @@ async function createPost() {
     imageUrl = data.imageUrl;
   }
 
-  // VIDEO
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
@@ -127,15 +125,10 @@ async function loadFeed() {
     div.style.marginBottom = "12px";
 
     div.innerHTML = `
-      <!-- USER HEADER -->
-      <div
-        style="display:flex;align-items:center;gap:8px;cursor:pointer"
-        onclick="goProfile('${p.userId._id}')"
-      >
-        <img
-          src="${p.userId?.profilePic || 'https://via.placeholder.com/32'}"
-          style="width:32px;height:32px;border-radius:50%;object-fit:cover"
-        />
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer"
+           onclick="goProfile('${p.userId._id}')">
+        <img src="${p.userId?.profilePic || 'https://via.placeholder.com/32'}"
+             style="width:32px;height:32px;border-radius:50%;object-fit:cover" />
         <b>${p.userId?.name || "User"}</b>
       </div>
 
@@ -143,29 +136,22 @@ async function loadFeed() {
 
       <p>${p.content || ""}</p>
 
-      ${p.image ? `
-        <img src="${p.image}" style="max-width:100%;margin-top:6px" />
-      ` : ""}
+      ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px" />` : ""}
 
       ${p.video ? `
         <video controls style="max-width:100%;margin-top:6px">
           <source src="${p.video}" type="video/mp4">
-        </video>
-      ` : ""}
+        </video>` : ""}
 
-      <!-- ACTION BAR -->
       <div style="margin-top:6px;display:flex;gap:10px">
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
-
         ${p.userId._id === myId
           ? `<button onclick="deletePost('${p._id}')" style="color:red">🗑️ Delete</button>`
-          : ""
-        }
+          : ""}
       </div>
 
-      <!-- COMMENTS -->
       <div style="margin-top:6px">
         ${(p.comments || []).map(c => `
           <div style="margin-left:10px;font-size:14px">
@@ -174,13 +160,10 @@ async function loadFeed() {
         `).join("")}
       </div>
 
-      <!-- ADD COMMENT -->
       <div style="margin-top:6px">
-        <input
-          placeholder="Write comment..."
-          id="c-${p._id}"
-          style="width:70%"
-        />
+        <input placeholder="Write comment..."
+               id="c-${p._id}"
+               style="width:70%" />
         <button onclick="addComment('${p._id}')">Send</button>
       </div>
     `;
@@ -190,7 +173,45 @@ async function loadFeed() {
 }
 
 /* ======================
-   LIKE / UNLIKE
+   PROFILE DROPDOWN
+====================== */
+async function loadMyProfilePic() {
+  try {
+    const myId = JSON.parse(atob(token.split(".")[1])).id;
+    const res = await fetch(API + "/api/users/profile/" + myId, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const data = await res.json();
+    if (data.user && data.user.profilePic) {
+      document.getElementById("profileMenuBtn").src = data.user.profilePic;
+    }
+  } catch {}
+}
+
+document.addEventListener("click", e => {
+  const btn = document.getElementById("profileMenuBtn");
+  const drop = document.getElementById("profileDropdown");
+  if (!btn || !drop) return;
+
+  if (btn.contains(e.target)) {
+    drop.style.display = drop.style.display === "block" ? "none" : "block";
+  } else if (!drop.contains(e.target)) {
+    drop.style.display = "none";
+  }
+});
+
+function goMyProfile() {
+  location.href = "profile.html";
+}
+
+function logout() {
+  localStorage.removeItem("token");
+  location.href = "index.html";
+}
+
+/* ======================
+   LIKE / COMMENT / DELETE
 ====================== */
 async function toggleLike(postId) {
   await fetch(API + "/api/posts/" + postId + "/like", {
@@ -200,9 +221,6 @@ async function toggleLike(postId) {
   loadFeed();
 }
 
-/* ======================
-   ADD COMMENT
-====================== */
 async function addComment(postId) {
   const input = document.getElementById("c-" + postId);
   const text = input.value.trim();
@@ -221,9 +239,6 @@ async function addComment(postId) {
   loadFeed();
 }
 
-/* ======================
-   DELETE POST
-====================== */
 async function deletePost(postId) {
   await fetch(API + "/api/posts/" + postId, {
     method: "DELETE",
@@ -232,15 +247,13 @@ async function deletePost(postId) {
   loadFeed();
 }
 
-/* ======================
-   GO TO PROFILE
-====================== */
 function goProfile(userId) {
   if (!userId) return;
   location.href = "profile.html?id=" + userId;
 }
 
 /* ======================
-   INITIAL LOAD
+   INIT
 ====================== */
+loadMyProfilePic();
 loadFeed();
