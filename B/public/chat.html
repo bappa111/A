@@ -6,58 +6,65 @@
 </head>
 <body>
 
-<h3>Friends</h3>
-<ul id="friends"></ul>
+<h2>Chat</h2>
 
-<h3>Users</h3>
-<ul id="users"></ul>
+<div style="display:flex; gap:20px;">
 
-<hr>
+  <!-- LEFT SIDE : FRIENDS + USERS -->
+  <div style="width:30%; border-right:1px solid #ccc; padding-right:10px;">
 
-<h4 id="chatWith"></h4>
+    <h3>Friends</h3>
+    <ul id="friends"></ul>
 
-<div id="messages" style="min-height:200px;"></div>
+    <h3>Users</h3>
+    <ul id="users"></ul>
 
-<!-- ======================
-     MESSAGE INPUT
-====================== -->
-<input id="msg" placeholder="Message">
-<button onclick="sendMessage()">Send</button>
+  </div>
 
-<!-- ======================
-     ATTACH BUTTON
-====================== -->
-<button id="attachBtn">➕</button>
+  <!-- RIGHT SIDE : CHAT AREA -->
+  <div style="width:70%; padding-left:10px;">
 
-<div id="attachMenu" style="display:none; margin-top:6px;">
-  <button onclick="document.getElementById('imageInput').click()">📷 Image</button>
-  <button onclick="document.getElementById('videoInput').click()">🎥 Video</button>
-  <button onclick="startVoice()">🎙️ Voice</button>
+    <h4 id="chatWith"></h4>
+
+    <div id="messages" style="min-height:200px; border:1px solid #ddd; padding:6px; margin-bottom:8px;"></div>
+
+    <!-- MESSAGE INPUT -->
+    <input id="msg" placeholder="Message">
+    <button onclick="sendMessage()">Send</button>
+
+    <!-- ATTACH BUTTON -->
+    <button id="attachBtn">➕</button>
+
+    <div id="attachMenu" style="display:none; margin-top:6px;">
+      <button onclick="document.getElementById('imageInput').click()">📷 Image</button>
+      <button onclick="document.getElementById('videoInput').click()">🎥 Video</button>
+      <button onclick="startVoice()">🎙️ Voice</button>
+    </div>
+
+    <!-- HIDDEN FILE INPUTS -->
+    <input
+      type="file"
+      id="imageInput"
+      accept="image/*"
+      hidden
+      onchange="handleImageChange(event)"
+    >
+
+    <input
+      type="file"
+      id="videoInput"
+      accept="video/*"
+      hidden
+      onchange="handleVideoChange(event)"
+    >
+
+    <!-- VOICE CONTROL -->
+    <br><br>
+    <button onclick="stopVoice()">⏹️ Stop Voice</button>
+
+  </div>
+
 </div>
-
-<!-- ======================
-     HIDDEN FILE INPUTS
-====================== -->
-<input
-  type="file"
-  id="imageInput"
-  accept="image/*"
-  hidden
-  onchange="handleImageChange(event)"
->
-
-<input
-  type="file"
-  id="videoInput"
-  accept="video/*"
-  hidden
-  onchange="handleVideoChange(event)"
->
-
-<!-- ======================
-     VOICE CONTROLS
-====================== -->
-<button onclick="stopVoice()">⏹️ Stop Voice</button>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="app.js"></script>
