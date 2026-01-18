@@ -119,6 +119,8 @@ async function loadFeed() {
   const myId = getMyUserId();
 
   posts.forEach(p => {
+    if (!p.userId) return;
+
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
@@ -127,9 +129,11 @@ async function loadFeed() {
     div.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;cursor:pointer"
            onclick="goProfile('${p.userId._id}')">
-        <img src="${p.userId?.profilePic || 'https://via.placeholder.com/32'}"
-             style="width:32px;height:32px;border-radius:50%;object-fit:cover" />
-        <b>${p.userId?.name || "User"}</b>
+        <img
+          src="${p.userId.profilePic || 'https://via.placeholder.com/32'}"
+          style="width:32px;height:32px;border-radius:50%;object-fit:cover"
+        />
+        <b>${p.userId.name || "User"}</b>
       </div>
 
       ${renderFollowedBy(p)}
@@ -137,7 +141,6 @@ async function loadFeed() {
       <p>${p.content || ""}</p>
 
       ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px" />` : ""}
-
       ${p.video ? `
         <video controls style="max-width:100%;margin-top:6px">
           <source src="${p.video}" type="video/mp4">
@@ -177,7 +180,9 @@ async function loadFeed() {
 ====================== */
 async function loadMyProfilePic() {
   try {
-    const myId = JSON.parse(atob(token.split(".")[1])).id;
+    const myId = getMyUserId();
+    if (!myId) return;
+
     const res = await fetch(API + "/api/users/profile/" + myId, {
       headers: { Authorization: "Bearer " + token }
     });

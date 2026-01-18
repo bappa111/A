@@ -46,24 +46,56 @@ async function loadProfile() {
   ====================== */
   const bioInput = document.getElementById("bio");
   const postsDiv = document.getElementById("posts");
+  const postsSection = document.getElementById("postsSection");
   const followList = document.getElementById("followList");
   const chatBtn = document.getElementById("chatBtn");
   const saveBtn = document.getElementById("saveBtn");
   const followBtn = document.getElementById("followBtn");
   const picInput = document.getElementById("profilePicInput");
   const img = document.getElementById("profilePic");
-  const postsSection = document.getElementById("postsSection"); // 🔥 IMPORTANT
   const followersCount = document.getElementById("followersCount");
   const followingCount = document.getElementById("followingCount");
 
   /* ======================
-     PRIVATE PROFILE RESTRICTION
+     BASIC INFO (always allowed)
+  ====================== */
+  if (img) {
+    img.src = data.user.profilePic || "https://via.placeholder.com/120";
+    img.style.display = "block";
+  }
+
+  if (followersCount)
+    followersCount.innerText = data.user.followersCount || 0;
+  if (followingCount)
+    followingCount.innerText = data.user.followingCount || 0;
+
+  /* ======================
+     PRIVATE PROFILE LOCK
+     (ONLY profile pic + follow button visible)
   ====================== */
   if (isPrivate && !isOwner && !isFollower) {
     if (bioInput) bioInput.style.display = "none";
     if (postsSection) postsSection.style.display = "none";
     if (followList) followList.style.display = "none";
     if (chatBtn) chatBtn.style.display = "none";
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
+  }
+
+  /* ======================
+     BIO
+  ====================== */
+  if (bioInput) {
+    bioInput.value = data.user.bio || "";
+    if (!isOwner) {
+      bioInput.disabled = true;
+    }
+  }
+
+  /* ======================
+     SAVE / PIC PERMISSION
+  ====================== */
+  if (!isOwner) {
     if (saveBtn) saveBtn.style.display = "none";
     if (picInput) picInput.style.display = "none";
   }
@@ -77,35 +109,6 @@ async function loadProfile() {
     } else {
       chatBtn.style.display = "inline-block";
     }
-  }
-
-  /* ======================
-     USER INFO
-  ====================== */
-  if (bioInput) {
-    bioInput.value = data.user.bio || "";
-    if (!isOwner) bioInput.disabled = true; // ✅ CONFIRMED
-  }
-
-  if (img) {
-    img.src = data.user.profilePic || "https://via.placeholder.com/120";
-    img.style.display = "block";
-  }
-
-  /* ======================
-     FOLLOW COUNTS
-  ====================== */
-  if (followersCount)
-    followersCount.innerText = data.user.followersCount || 0;
-  if (followingCount)
-    followingCount.innerText = data.user.followingCount || 0;
-
-  /* ======================
-     BUTTON PERMISSIONS
-  ====================== */
-  if (!isOwner) {
-    if (saveBtn) saveBtn.style.display = "none";
-    if (picInput) picInput.style.display = "none";
   }
 
   /* ======================
@@ -131,7 +134,7 @@ async function loadProfile() {
   }
 
   /* ======================
-     POSTS
+     POSTS (ONLY if allowed)
   ====================== */
   if (postsDiv && postsSection) {
     postsDiv.innerHTML = "";
@@ -154,6 +157,7 @@ async function loadProfile() {
               : ""
           }
         `;
+
         postsDiv.appendChild(div);
       });
     }
