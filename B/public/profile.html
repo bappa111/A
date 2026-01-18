@@ -6,11 +6,11 @@
 
 <img id="profilePic" width="120" style="display:none"><br><br>
 
-<input type="file" id="profilePicInput" accept="image/*"><br><br>
+<input type="file" id="profilePicInput" accept="image/*" style="display:none"><br><br>
 
-<textarea id="bio" placeholder="Write bio..."></textarea><br><br>
+<textarea id="bio" placeholder="Write bio..." style="display:none"></textarea><br><br>
 
-<div style="margin-top:10px">
+<div id="followStats" style="display:none;margin-top:10px">
   <span onclick="openFollowers()" style="cursor:pointer">
     👥 Followers (<span id="followersCount">0</span>)
   </span>
@@ -20,17 +20,18 @@
   </span>
 </div>
 
-<button id="chatBtn" onclick="openDM()">Chat</button>
-<div id="followList" style="margin-top:10px"></div>
+<button id="chatBtn" style="display:none" onclick="openDM()">Chat</button>
 
-<button id="saveBtn" onclick="updateProfile()">Save</button>
+<div id="followList" style="display:none;margin-top:10px"></div>
+
+<button id="saveBtn" style="display:none" onclick="updateProfile()">Save</button>
 
 <hr>
 
-<button id="followBtn" onclick="toggleFollow()">Follow</button>
+<button id="followBtn" style="display:none" onclick="toggleFollow()">Follow</button>
 <p id="followInfo"></p>
 
-<div id="postsSection">
+<div id="postsSection" style="display:none">
   <h4>Your Posts</h4>
   <div id="posts"></div>
 </div>
