@@ -1,12 +1,12 @@
 const express = require("express");
 const Message = require("../models/Message");
-const User = require("../models/User"); // ✅ ADD
+const User = require("../models/User");
 const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 /* ======================
-   SEND MESSAGE
+   SEND MESSAGE (AUTO FRIEND ADD)
 ====================== */
 router.post("/", auth, async (req, res) => {
   const { receiverId, message, image, voice, video } = req.body;
@@ -15,7 +15,7 @@ router.post("/", auth, async (req, res) => {
     return res.status(400).json({ msg: "receiverId required" });
   }
 
-  // 1️⃣ Create message
+  // ✅ CREATE MESSAGE
   const msg = await Message.create({
     senderId: req.user.id,
     receiverId,
@@ -28,28 +28,27 @@ router.post("/", auth, async (req, res) => {
     deletedFor: []
   });
 
-  // 2️⃣ AUTO FRIEND ADD (safe)
-  const senderId = req.user.id;
-
-  const sender = await User.findById(senderId);
+  // ✅ AUTO FRIEND LOGIC
+  const sender = await User.findById(req.user.id);
   const receiver = await User.findById(receiverId);
 
-  if (sender && !sender.friends.includes(receiverId)) {
-    sender.friends.push(receiverId);
-    await sender.save();
+  if (sender && receiver) {
+    if (!sender.friends.includes(receiverId)) {
+      sender.friends.push(receiverId);
+      await sender.save();
+    }
+
+    if (!receiver.friends.includes(req.user.id)) {
+      receiver.friends.push(req.user.id);
+      await receiver.save();
+    }
   }
 
-  if (receiver && !receiver.friends.includes(senderId)) {
-    receiver.friends.push(senderId);
-    await receiver.save();
-  }
-
-  // 3️⃣ Return message
   res.json(msg);
 });
 
 /* ======================
-   MARK SEEN  (⚠️ MUST be above /:userId)
+   MARK SEEN
 ====================== */
 router.post("/seen/:userId", auth, async (req, res) => {
   await Message.updateMany(
@@ -65,10 +64,9 @@ router.post("/seen/:userId", auth, async (req, res) => {
 });
 
 /* ======================
-   GET CHAT (mark delivered + hide deleted)
+   GET CHAT (mark delivered)
 ====================== */
 router.get("/:userId", auth, async (req, res) => {
-  // mark delivered
   await Message.updateMany(
     {
       senderId: req.params.userId,
@@ -90,13 +88,12 @@ router.get("/:userId", auth, async (req, res) => {
 });
 
 /* ======================
-   DELETE MESSAGE (for everyone)
+   DELETE MESSAGE
 ====================== */
 router.delete("/:id", auth, async (req, res) => {
   const msg = await Message.findById(req.params.id);
   if (!msg) return res.json({ ok: true });
 
-  // only sender can delete
   if (msg.senderId.toString() !== req.user.id) {
     return res.status(403).json({ msg: "Not allowed" });
   }
