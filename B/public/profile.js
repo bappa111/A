@@ -45,8 +45,8 @@ async function loadProfile() {
      ELEMENTS
   ====================== */
   const bioInput = document.getElementById("bio");
-  const postsDiv = document.getElementById("posts");
   const postsSection = document.getElementById("postsSection");
+  const postsDiv = document.getElementById("posts");
   const followList = document.getElementById("followList");
   const chatBtn = document.getElementById("chatBtn");
   const saveBtn = document.getElementById("saveBtn");
@@ -57,110 +57,98 @@ async function loadProfile() {
   const followingCount = document.getElementById("followingCount");
 
   /* ======================
-     BASIC INFO (always allowed)
+     ALWAYS SHOW (PIC + BIO)
   ====================== */
   if (img) {
     img.src = data.user.profilePic || "https://via.placeholder.com/120";
     img.style.display = "block";
   }
 
+  if (bioInput) {
+    bioInput.value = data.user.bio || "";
+    bioInput.disabled = true; // 🔒 always read-only unless owner
+  }
+
+  /* ======================
+     PRIVATE PROFILE LOCK
+  ====================== */
+  if (isPrivate && !isOwner && !isFollower) {
+    if (postsSection) postsSection.style.display = "none";
+    if (followList) followList.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "none";
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
+
+    // counts allowed, but no lists
+    return; // ⛔ STOP HERE — nothing else renders
+  }
+
+  /* ======================
+     OWNER PERMISSIONS
+  ====================== */
+  if (isOwner) {
+    if (bioInput) bioInput.disabled = false;
+    if (saveBtn) saveBtn.style.display = "inline-block";
+    if (picInput) picInput.style.display = "inline-block";
+    if (followBtn) followBtn.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "none";
+  } else {
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "inline-block";
+  }
+
+  /* ======================
+     FOLLOW COUNTS
+  ====================== */
   if (followersCount)
     followersCount.innerText = data.user.followersCount || 0;
   if (followingCount)
     followingCount.innerText = data.user.followingCount || 0;
 
   /* ======================
-     PRIVATE PROFILE LOCK
-     (ONLY profile pic + follow button visible)
-  ====================== */
-  if (isPrivate && !isOwner && !isFollower) {
-    if (bioInput) bioInput.style.display = "none";
-    if (postsSection) postsSection.style.display = "none";
-    if (followList) followList.style.display = "none";
-    if (chatBtn) chatBtn.style.display = "none";
-    if (saveBtn) saveBtn.style.display = "none";
-    if (picInput) picInput.style.display = "none";
-  }
-
-  /* ======================
-     BIO
-  ====================== */
-  if (bioInput) {
-    bioInput.value = data.user.bio || "";
-    if (!isOwner) {
-      bioInput.disabled = true;
-    }
-  }
-
-  /* ======================
-     SAVE / PIC PERMISSION
-  ====================== */
-  if (!isOwner) {
-    if (saveBtn) saveBtn.style.display = "none";
-    if (picInput) picInput.style.display = "none";
-  }
-
-  /* ======================
-     CHAT BUTTON
-  ====================== */
-  if (chatBtn) {
-    if (isOwner || (isPrivate && !isFollower)) {
-      chatBtn.style.display = "none";
-    } else {
-      chatBtn.style.display = "inline-block";
-    }
-  }
-
-  /* ======================
      FOLLOW / UNFOLLOW
   ====================== */
-  if (followBtn) {
-    if (isOwner) {
-      followBtn.style.display = "none";
-    } else {
-      followBtn.style.display = "inline-block";
+  if (followBtn && !isOwner) {
+    const meRes = await fetch(API + "/api/users/profile/" + myId, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    const meData = await meRes.json();
 
-      const meRes = await fetch(API + "/api/users/profile/" + myId, {
-        headers: { Authorization: "Bearer " + token }
-      });
-      const meData = await meRes.json();
+    const amIFollowing =
+      meData.user.following &&
+      meData.user.following.includes(profileUserId);
 
-      const amIFollowing =
-        meData.user.following &&
-        meData.user.following.includes(profileUserId);
-
-      followBtn.innerText = amIFollowing ? "Unfollow" : "Follow";
-    }
+    followBtn.innerText = amIFollowing ? "Unfollow" : "Follow";
+    followBtn.style.display = "inline-block";
   }
 
   /* ======================
-     POSTS (ONLY if allowed)
+     POSTS (ALLOWED NOW)
   ====================== */
   if (postsDiv && postsSection) {
+    postsSection.style.display = "block";
     postsDiv.innerHTML = "";
 
-    if (!isPrivate || isOwner || isFollower) {
-      data.posts.forEach(p => {
-        const div = document.createElement("div");
-        div.style.border = "1px solid #ccc";
-        div.style.padding = "6px";
-        div.style.marginBottom = "8px";
+    data.posts.forEach(p => {
+      const div = document.createElement("div");
+      div.style.border = "1px solid #ccc";
+      div.style.padding = "6px";
+      div.style.marginBottom = "8px";
 
-        div.innerHTML = `
-          <p>${p.content || ""}</p>
-          ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
-          ${
-            p.video
-              ? `<video controls style="max-width:100%">
-                   <source src="${p.video}">
-                 </video>`
-              : ""
-          }
-        `;
-
-        postsDiv.appendChild(div);
-      });
-    }
+      div.innerHTML = `
+        <p>${p.content || ""}</p>
+        ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+        ${
+          p.video
+            ? `<video controls style="max-width:100%">
+                 <source src="${p.video}">
+               </video>`
+            : ""
+        }
+      `;
+      postsDiv.appendChild(div);
+    });
   }
 }
 
@@ -182,12 +170,8 @@ async function updateProfile() {
       method: "POST",
       body: fd
     });
-
     const data = await res.json();
-    if (!data.imageUrl) {
-      alert("Profile pic upload failed");
-      return;
-    }
+    if (!data.imageUrl) return alert("Upload failed");
     profilePicUrl = data.imageUrl;
   }
 
@@ -200,12 +184,11 @@ async function updateProfile() {
     body: JSON.stringify({ bio, profilePic: profilePicUrl })
   });
 
-  alert("Profile updated");
   loadProfile();
 }
 
 /* ======================
-   FOLLOW / UNFOLLOW
+   FOLLOW
 ====================== */
 async function toggleFollow() {
   if (profileUserId === myId) return;
@@ -219,50 +202,9 @@ async function toggleFollow() {
 }
 
 /* ======================
-   FOLLOW LIST
-====================== */
-async function openFollowers() {
-  const res = await fetch(API + "/api/users/" + profileUserId + "/followers", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const users = await res.json();
-  renderFollowList(users, "Followers");
-}
-
-async function openFollowing() {
-  const res = await fetch(API + "/api/users/" + profileUserId + "/following", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const users = await res.json();
-  renderFollowList(users, "Following");
-}
-
-function renderFollowList(users, title) {
-  const div = document.getElementById("followList");
-  if (!div) return;
-
-  div.innerHTML = `<h4>${title}</h4>`;
-  users.forEach(u => {
-    div.innerHTML += `
-      <div
-        style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:6px"
-        onclick="location.href='profile.html?id=${u._id}'"
-      >
-        <img
-          src="${u.profilePic || "https://via.placeholder.com/32"}"
-          style="width:32px;height:32px;border-radius:50%"
-        />
-        <b>${u.name}</b>
-      </div>
-    `;
-  });
-}
-
-/* ======================
    OPEN DM
 ====================== */
 function openDM() {
-  if (!profileUserId) return;
   location.href = "chat.html?userId=" + profileUserId;
 }
 
