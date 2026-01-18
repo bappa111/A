@@ -185,6 +185,19 @@ function getMyUserId() {
   return payload.id;
 }
 
+async function openChatFromProfile(userId) {
+  const res = await fetch(API + "/api/users/profile/" + userId, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const data = await res.json();
+  if (!data.user) return;
+
+  openChat({
+    _id: data.user._id,
+    name: data.user.name
+  });
+}
 /* ======================
    SEND TEXT
 ====================== */
@@ -224,21 +237,20 @@ if (token && location.pathname.includes("chat.html")) {
   }
 
   socket = io(API, { query: { userId: payload.id } });
-
-  socket.on("private-message", () => {
-    loadMessages();
-    markSeen();
-  });
+  socket.on("private-message", loadMessages);
 
   const params = new URLSearchParams(location.search);
   const otherUserId = params.get("userId");
 
   if (otherUserId) {
+    // 🔒 Profile → Direct chat //
     const usersDiv = document.getElementById("users");
     if (usersDiv) usersDiv.style.display = "none";
-    openChat({ _id: otherUserId, name: "User" });
+
+    openChatFromProfile(otherUserId);
   } else {
-    loadFriends();
-    loadUsers();
+    // 📋 Normal chat page//
+    loadFriends();   // ✅ থাকবে
+    loadUsers();     // ✅ থাকবে
   }
 }
