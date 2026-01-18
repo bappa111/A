@@ -363,19 +363,16 @@ if (token && location.pathname.includes("chat.html")) {
   }
 
   socket = io(API, { query: { userId: payload.id } });
+
   socket.on("private-message", loadMessages);
 
-  // 🔍 check DM user from profile
   const params = new URLSearchParams(location.search);
   const otherUserId = params.get("userId");
 
   if (otherUserId) {
-    // 👉 Profile → Direct DM
-    const usersBox = document.getElementById("users");
-    if (usersBox) usersBox.style.display = "none";
+    document.getElementById("users").style.display = "none";
     openChat({ _id: otherUserId, name: "User" });
   } else {
-    // 👉 Normal chat page
     loadUsers();
   }
 }
