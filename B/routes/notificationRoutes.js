@@ -19,9 +19,7 @@ router.get("/", auth, async (req, res) => {
    MARK AS SEEN
 ====================== */
 router.post("/seen/:id", auth, async (req, res) => {
-  await Notification.findByIdAndUpdate(req.params.id, {
-    seen: true
-  });
+  await Notification.findByIdAndUpdate(req.params.id, { seen: true });
   res.json({ ok: true });
 });
 

@@ -24,10 +24,15 @@ router.get("/profile/:id", auth, async (req, res) => {
   const user = await User.findById(req.params.id).select(
     "name email profilePic bio followers following isPrivate followRequests"
   );
-
   if (!user) return res.status(404).json({ msg: "User not found" });
 
-  const posts = await Post.find({ userId: req.params.id }).sort({ createdAt: -1 });
+  const isOwner = req.user.id === req.params.id;
+  const isFollower = user.followers.includes(req.user.id);
+
+  let posts = [];
+  if (!user.isPrivate || isOwner || isFollower) {
+    posts = await Post.find({ userId: req.params.id }).sort({ createdAt: -1 });
+  }
 
   res.json({
     user: {
@@ -45,7 +50,6 @@ router.get("/profile/:id", auth, async (req, res) => {
 router.put("/profile", auth, async (req, res) => {
   const { bio, profilePic, isPrivate } = req.body;
   const user = await User.findById(req.user.id);
-
   if (!user) return res.status(404).json({ msg: "User not found" });
 
   if (bio !== undefined) user.bio = bio;
@@ -62,7 +66,6 @@ router.put("/profile", auth, async (req, res) => {
 router.post("/follow/:id", auth, async (req, res) => {
   const me = await User.findById(req.user.id);
   const other = await User.findById(req.params.id);
-
   if (!other) return res.status(404).json({ msg: "User not found" });
 
   // UNFOLLOW
@@ -74,7 +77,7 @@ router.post("/follow/:id", auth, async (req, res) => {
     return res.json({ followed: false });
   }
 
-  // PRIVATE PROFILE → REQUEST
+  // PRIVATE → FOLLOW REQUEST
   if (other.isPrivate) {
     if (!other.followRequests.includes(me._id)) {
       other.followRequests.push(me._id);
@@ -91,7 +94,7 @@ router.post("/follow/:id", auth, async (req, res) => {
     return res.json({ requested: true });
   }
 
-  // PUBLIC PROFILE → DIRECT FOLLOW
+  // PUBLIC → DIRECT FOLLOW
   me.following.push(other._id);
   other.followers.push(me._id);
   await me.save();
@@ -148,20 +151,15 @@ router.post("/follow-reject/:id", auth, async (req, res) => {
 });
 
 /* ======================
-   GET FOLLOWERS
+   FOLLOWERS / FOLLOWING
 ====================== */
 router.get("/:id/followers", auth, async (req, res) => {
   const user = await User.findById(req.params.id).populate("followers", "name profilePic");
-  if (!user) return res.status(404).json({ msg: "User not found" });
   res.json(user.followers);
 });
 
-/* ======================
-   GET FOLLOWING
-====================== */
 router.get("/:id/following", auth, async (req, res) => {
   const user = await User.findById(req.params.id).populate("following", "name profilePic");
-  if (!user) return res.status(404).json({ msg: "User not found" });
   res.json(user.following);
 });
 
