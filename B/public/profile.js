@@ -66,36 +66,7 @@ async function loadProfile() {
 
   if (bioInput) {
     bioInput.value = data.user.bio || "";
-    bioInput.disabled = true; // 🔒 always read-only unless owner
-  }
-
-  /* ======================
-     PRIVATE PROFILE LOCK
-  ====================== */
-  if (isPrivate && !isOwner && !isFollower) {
-    if (postsSection) postsSection.style.display = "none";
-    if (followList) followList.style.display = "none";
-    if (chatBtn) chatBtn.style.display = "none";
-    if (saveBtn) saveBtn.style.display = "none";
-    if (picInput) picInput.style.display = "none";
-
-    // counts allowed, but no lists
-    return; // ⛔ STOP HERE — nothing else renders
-  }
-
-  /* ======================
-     OWNER PERMISSIONS
-  ====================== */
-  if (isOwner) {
-    if (bioInput) bioInput.disabled = false;
-    if (saveBtn) saveBtn.style.display = "inline-block";
-    if (picInput) picInput.style.display = "inline-block";
-    if (followBtn) followBtn.style.display = "none";
-    if (chatBtn) chatBtn.style.display = "none";
-  } else {
-    if (saveBtn) saveBtn.style.display = "none";
-    if (picInput) picInput.style.display = "none";
-    if (chatBtn) chatBtn.style.display = "inline-block";
+    bioInput.disabled = !isOwner;
   }
 
   /* ======================
@@ -107,7 +78,35 @@ async function loadProfile() {
     followingCount.innerText = data.user.followingCount || 0;
 
   /* ======================
-     FOLLOW / UNFOLLOW
+     🔒 PRIVATE PROFILE LOCK
+  ====================== */
+  if (isPrivate && !isOwner && !isFollower) {
+    if (postsSection) postsSection.style.display = "none";
+    if (followList) followList.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "none";
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
+
+    if (followBtn) followBtn.style.display = "inline-block";
+    return; // ⛔ STOP — nothing else allowed
+  }
+
+  /* ======================
+     OWNER CONTROLS
+  ====================== */
+  if (isOwner) {
+    if (saveBtn) saveBtn.style.display = "inline-block";
+    if (picInput) picInput.style.display = "inline-block";
+    if (followBtn) followBtn.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "none";
+  } else {
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
+    if (chatBtn) chatBtn.style.display = "inline-block";
+  }
+
+  /* ======================
+     FOLLOW / UNFOLLOW BUTTON
   ====================== */
   if (followBtn && !isOwner) {
     const meRes = await fetch(API + "/api/users/profile/" + myId, {
@@ -124,9 +123,9 @@ async function loadProfile() {
   }
 
   /* ======================
-     POSTS (ALLOWED NOW)
+     POSTS (ALLOWED)
   ====================== */
-  if (postsDiv && postsSection) {
+  if (postsSection && postsDiv) {
     postsSection.style.display = "block";
     postsDiv.innerHTML = "";
 
@@ -135,7 +134,6 @@ async function loadProfile() {
       div.style.border = "1px solid #ccc";
       div.style.padding = "6px";
       div.style.marginBottom = "8px";
-
       div.innerHTML = `
         <p>${p.content || ""}</p>
         ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
@@ -170,6 +168,7 @@ async function updateProfile() {
       method: "POST",
       body: fd
     });
+
     const data = await res.json();
     if (!data.imageUrl) return alert("Upload failed");
     profilePicUrl = data.imageUrl;
@@ -188,7 +187,7 @@ async function updateProfile() {
 }
 
 /* ======================
-   FOLLOW
+   FOLLOW / UNFOLLOW
 ====================== */
 async function toggleFollow() {
   if (profileUserId === myId) return;
@@ -206,6 +205,25 @@ async function toggleFollow() {
 ====================== */
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
+}
+
+/* ======================
+   FOLLOW REQUEST ACTIONS
+====================== */
+async function acceptFollow(id) {
+  await fetch(API + "/api/users/follow-accept/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadProfile();
+}
+
+async function rejectFollow(id) {
+  await fetch(API + "/api/users/follow-reject/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadProfile();
 }
 
 /* ======================

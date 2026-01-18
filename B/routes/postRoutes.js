@@ -1,5 +1,6 @@
 const express = require("express");
 const Post = require("../models/Post");
+const Notification = require("../models/Notification");
 const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -21,27 +22,23 @@ router.post("/", auth, async (req, res) => {
 });
 
 /* ======================
-   GET FEED (FOLLOWED BY BADGE DATA)
+   GET FEED
 ====================== */
 router.get("/", auth, async (req, res) => {
   const myId = req.user.id;
 
   const posts = await Post.find()
-    .populate("userId", "name profilePic")
-    .populate("userId.followers", "name") // 🔥 FOLLOWER NAME আনছি
+    .populate("userId", "name profilePic followers")
     .sort({ createdAt: -1 })
     .lean();
 
   const formatted = posts.map(p => {
     const followedBy = (p.userId.followers || [])
       .filter(u => u._id.toString() !== myId)
-      .slice(0, 2) // max 2 names
-      .map(u => u.name); // ✅ NAME ONLY
+      .slice(0, 2)
+      .map(u => u.name);
 
-    return {
-      ...p,
-      followedBy
-    };
+    return { ...p, followedBy };
   });
 
   res.json(formatted);
@@ -57,8 +54,21 @@ router.post("/:id/like", auth, async (req, res) => {
   const userId = req.user.id;
   const index = post.likes.indexOf(userId);
 
-  if (index === -1) post.likes.push(userId);
-  else post.likes.splice(index, 1);
+  if (index === -1) {
+    post.likes.push(userId);
+
+    if (post.userId.toString() !== userId) {
+      await Notification.create({
+        userId: post.userId,
+        fromUser: userId,
+        type: "like",
+        text: "Someone liked your post",
+        link: `/profile.html?id=${userId}`
+      });
+    }
+  } else {
+    post.likes.splice(index, 1);
+  }
 
   await post.save();
   res.json({ likes: post.likes.length });
@@ -77,6 +87,17 @@ router.post("/:id/comment", auth, async (req, res) => {
   });
 
   await post.save();
+
+  if (post.userId.toString() !== req.user.id) {
+    await Notification.create({
+      userId: post.userId,
+      fromUser: req.user.id,
+      type: "comment",
+      text: "Someone commented on your post",
+      link: `/profile.html?id=${req.user.id}`
+    });
+  }
+
   res.json(post.comments);
 });
 
