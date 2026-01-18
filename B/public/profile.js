@@ -34,6 +34,27 @@ async function loadProfile() {
     return;
   }
 
+  // ✅ এখানেই বসাবে
+  const isOwner = profileUserId === myId;
+
+  const isFollower =
+    data.user.followers &&
+    data.user.followers.includes(myId);
+
+  const isPrivate = data.user.isPrivate;
+
+  // 🔒 PRIVATE PROFILE RESTRICTION
+  if (isPrivate && !isOwner && !isFollower) {
+    document.getElementById("bio").style.display = "none";
+    document.getElementById("posts").style.display = "none";
+    document.getElementById("followList").style.display = "none";
+
+    const chatBtn = document.getElementById("chatBtn");
+    if (chatBtn) chatBtn.style.display = "none";
+  }
+
+  // ⬇️ এরপর বাকি profile rendering কোড চলবে
+
   /* ======================
      FLAGS (VERY IMPORTANT)
   ====================== */
