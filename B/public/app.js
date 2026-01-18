@@ -363,30 +363,19 @@ if (token && location.pathname.includes("chat.html")) {
   }
 
   socket = io(API, { query: { userId: payload.id } });
-socket.on("private-message", loadMessages);
+  socket.on("private-message", loadMessages);
 
-// 👇 URL এ userId আছে কিনা check
-const params = new URLSearchParams(location.search);
-const otherUserId = params.get("userId");
-
-if (otherUserId) {
-  // 🔒 Profile → Direct DM
-  document.getElementById("users").style.display = "none";
-  openChat({ _id: otherUserId, name: "User" });
-} else {
-  // 📋 Normal chat page → all users
-  loadUsers();
-}
-
-/* ======================
-   OPEN CHAT FROM PROFILE (DM)
-====================== */
-if (token && location.pathname.includes("chat.html")) {
+  // 🔍 check DM user from profile
   const params = new URLSearchParams(location.search);
   const otherUserId = params.get("userId");
 
   if (otherUserId) {
-    // existing chat system reuse
+    // 👉 Profile → Direct DM
+    const usersBox = document.getElementById("users");
+    if (usersBox) usersBox.style.display = "none";
     openChat({ _id: otherUserId, name: "User" });
+  } else {
+    // 👉 Normal chat page
+    loadUsers();
   }
 }
