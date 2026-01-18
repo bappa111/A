@@ -45,6 +45,18 @@ const UserSchema = new mongoose.Schema(
       }
     ],
 
+    isPrivate: {
+      type: Boolean,
+      default: false
+    },
+
+    followRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,
