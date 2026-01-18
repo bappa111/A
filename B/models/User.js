@@ -45,6 +45,13 @@ const UserSchema = new mongoose.Schema(
       }
     ],
 
+    friends: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
+
     isOnline: {
       type: Boolean,
       default: false

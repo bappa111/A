@@ -6,6 +6,9 @@
 </head>
 <body>
 
+<h3>Friends</h3>
+<ul id="friends"></ul>
+
 <h3>Users</h3>
 <ul id="users"></ul>
 
@@ -60,14 +63,7 @@
 <script src="app.js"></script>
 
 <script>
-  document.getElementById("attachBtn").onclick = () => {
-    const menu = document.getElementById("attachMenu");
-    menu.style.display =
-      menu.style.display === "block" ? "none" : "block";
-  };
-</script>
-<script>
-  // toggle attach menu
+  // toggle attach menu (ONLY ONCE)
   document.getElementById("attachBtn").onclick = () => {
     const menu = document.getElementById("attachMenu");
     menu.style.display = menu.style.display === "none" ? "block" : "none";

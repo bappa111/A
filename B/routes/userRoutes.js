@@ -114,4 +114,13 @@ router.get("/:id/following", auth, async (req, res) => {
   res.json(user.following);
 });
 
+//friend smg list//
+
+router.get("/friends", auth, async (req, res) => {
+  const user = await User.findById(req.user.id)
+    .populate("friends", "name profilePic");
+
+  res.json(user.friends || []);
+});
+
 module.exports = router;
