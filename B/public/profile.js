@@ -35,14 +35,20 @@ async function loadProfile() {
   }
 
   /* ======================
-     CHAT BUTTON (DM)
+   CHAT BUTTON (FINAL LOGIC)
   ====================== */
   const chatBtn = document.getElementById("chatBtn");
+
+  // URL এ id আছে কিনা
+  const isOwnProfile = !params.get("id");
+
   if (chatBtn) {
-    if (profileUserId === myId) {
-      chatBtn.style.display = "none"; // নিজের profile
+    if (isOwnProfile) {
+      // 🔒 নিজের profile → Chat নাই
+      chatBtn.style.display = "none";
     } else {
-      chatBtn.style.display = "inline-block"; // অন্য user
+      // 💬 অন্য user profile → Chat আছে
+      chatBtn.style.display = "inline-block";
     }
   }
 
