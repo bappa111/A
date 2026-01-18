@@ -16,8 +16,8 @@ function getMyId() {
    IDS
 ====================== */
 const params = new URLSearchParams(window.location.search);
-const profileUserId = params.get("id") || getMyId();
 const myId = getMyId();
+const profileUserId = params.get("id") || myId;
 
 /* ======================
    LOAD PROFILE
@@ -26,7 +26,6 @@ async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-
   const data = await res.json();
 
   if (!data.user) {
@@ -39,29 +38,39 @@ async function loadProfile() {
   ====================== */
   const isOwner = profileUserId === myId;
   const isFollower =
-    data.user.followers &&
-    data.user.followers.includes(myId);
+    data.user.followers && data.user.followers.includes(myId);
   const isPrivate = data.user.isPrivate === true;
+
+  /* ======================
+     ELEMENTS
+  ====================== */
+  const bioInput = document.getElementById("bio");
+  const postsDiv = document.getElementById("posts");
+  const followList = document.getElementById("followList");
+  const chatBtn = document.getElementById("chatBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const followBtn = document.getElementById("followBtn");
+  const picInput = document.getElementById("profilePicInput");
+  const img = document.getElementById("profilePic");
+  const postsSection = document.getElementById("postsSection"); // 🔥 IMPORTANT
+  const followersCount = document.getElementById("followersCount");
+  const followingCount = document.getElementById("followingCount");
 
   /* ======================
      PRIVATE PROFILE RESTRICTION
   ====================== */
   if (isPrivate && !isOwner && !isFollower) {
-    const bio = document.getElementById("bio");
-    const posts = document.getElementById("posts");
-    const followList = document.getElementById("followList");
-    const chatBtn = document.getElementById("chatBtn");
-
-    if (bio) bio.style.display = "none";
-    if (posts) posts.style.display = "none";
+    if (bioInput) bioInput.style.display = "none";
+    if (postsSection) postsSection.style.display = "none";
     if (followList) followList.style.display = "none";
     if (chatBtn) chatBtn.style.display = "none";
+    if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
   }
 
   /* ======================
      CHAT BUTTON
   ====================== */
-  const chatBtn = document.getElementById("chatBtn");
   if (chatBtn) {
     if (isOwner || (isPrivate && !isFollower)) {
       chatBtn.style.display = "none";
@@ -73,10 +82,11 @@ async function loadProfile() {
   /* ======================
      USER INFO
   ====================== */
-  const bioInput = document.getElementById("bio");
-  if (bioInput) bioInput.value = data.user.bio || "";
+  if (bioInput) {
+    bioInput.value = data.user.bio || "";
+    if (!isOwner) bioInput.disabled = true; // ✅ CONFIRMED
+  }
 
-  const img = document.getElementById("profilePic");
   if (img) {
     img.src = data.user.profilePic || "https://via.placeholder.com/120";
     img.style.display = "block";
@@ -85,27 +95,21 @@ async function loadProfile() {
   /* ======================
      FOLLOW COUNTS
   ====================== */
-  const followersCount = document.getElementById("followersCount");
-  const followingCount = document.getElementById("followingCount");
-
-  if (followersCount) followersCount.innerText = data.user.followersCount || 0;
-  if (followingCount) followingCount.innerText = data.user.followingCount || 0;
+  if (followersCount)
+    followersCount.innerText = data.user.followersCount || 0;
+  if (followingCount)
+    followingCount.innerText = data.user.followingCount || 0;
 
   /* ======================
      BUTTON PERMISSIONS
   ====================== */
-  const saveBtn = document.getElementById("saveBtn");
-  const followBtn = document.getElementById("followBtn");
-  const picInput = document.getElementById("profilePicInput");
-
   if (!isOwner) {
-    if (bioInput) bioInput.disabled = true;
-    if (picInput) picInput.style.display = "none";
     if (saveBtn) saveBtn.style.display = "none";
+    if (picInput) picInput.style.display = "none";
   }
 
   /* ======================
-     FOLLOW / UNFOLLOW BUTTON
+     FOLLOW / UNFOLLOW
   ====================== */
   if (followBtn) {
     if (isOwner) {
@@ -129,29 +133,30 @@ async function loadProfile() {
   /* ======================
      POSTS
   ====================== */
-  const postsDiv = document.getElementById("posts");
-  if (postsDiv) {
+  if (postsDiv && postsSection) {
     postsDiv.innerHTML = "";
-    data.posts.forEach(p => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.padding = "6px";
-      div.style.marginBottom = "8px";
 
-      div.innerHTML = `
-        <p>${p.content || ""}</p>
-        ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
-        ${
-          p.video
-            ? `<video controls style="max-width:100%">
-                 <source src="${p.video}">
-               </video>`
-            : ""
-        }
-      `;
+    if (!isPrivate || isOwner || isFollower) {
+      data.posts.forEach(p => {
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "6px";
+        div.style.marginBottom = "8px";
 
-      postsDiv.appendChild(div);
-    });
+        div.innerHTML = `
+          <p>${p.content || ""}</p>
+          ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+          ${
+            p.video
+              ? `<video controls style="max-width:100%">
+                   <source src="${p.video}">
+                 </video>`
+              : ""
+          }
+        `;
+        postsDiv.appendChild(div);
+      });
+    }
   }
 }
 
@@ -240,7 +245,7 @@ function renderFollowList(users, title) {
         onclick="location.href='profile.html?id=${u._id}'"
       >
         <img
-          src="${u.profilePic || 'https://via.placeholder.com/32'}"
+          src="${u.profilePic || "https://via.placeholder.com/32"}"
           style="width:32px;height:32px;border-radius:50%"
         />
         <b>${u.name}</b>
@@ -250,7 +255,7 @@ function renderFollowList(users, title) {
 }
 
 /* ======================
-   OPEN DM (PROFILE → CHAT)
+   OPEN DM
 ====================== */
 function openDM() {
   if (!profileUserId) return;
