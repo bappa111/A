@@ -34,36 +34,13 @@ async function loadProfile() {
     return;
   }
 
-  // ✅ এখানেই বসাবে
-  const isOwner = profileUserId === myId;
-
-  const isFollower =
-    data.user.followers &&
-    data.user.followers.includes(myId);
-
-  const isPrivate = data.user.isPrivate;
-
-  // 🔒 PRIVATE PROFILE RESTRICTION
-  if (isPrivate && !isOwner && !isFollower) {
-    document.getElementById("bio").style.display = "none";
-    document.getElementById("posts").style.display = "none";
-    document.getElementById("followList").style.display = "none";
-
-    const chatBtn = document.getElementById("chatBtn");
-    if (chatBtn) chatBtn.style.display = "none";
-  }
-
-  // ⬇️ এরপর বাকি profile rendering কোড চলবে
-
   /* ======================
-     FLAGS (VERY IMPORTANT)
+     FLAGS
   ====================== */
   const isOwner = profileUserId === myId;
-
   const isFollower =
     data.user.followers &&
     data.user.followers.includes(myId);
-
   const isPrivate = data.user.isPrivate === true;
 
   /* ======================
@@ -82,7 +59,7 @@ async function loadProfile() {
   }
 
   /* ======================
-     CHAT BUTTON (FINAL LOGIC)
+     CHAT BUTTON
   ====================== */
   const chatBtn = document.getElementById("chatBtn");
   if (chatBtn) {
@@ -155,7 +132,6 @@ async function loadProfile() {
   const postsDiv = document.getElementById("posts");
   if (postsDiv) {
     postsDiv.innerHTML = "";
-
     data.posts.forEach(p => {
       const div = document.createElement("div");
       div.style.border = "1px solid #ccc";
@@ -257,7 +233,6 @@ function renderFollowList(users, title) {
   if (!div) return;
 
   div.innerHTML = `<h4>${title}</h4>`;
-
   users.forEach(u => {
     div.innerHTML += `
       <div
