@@ -18,12 +18,13 @@ router.get("/", auth, async (req, res) => {
 });
 
 /* ======================
-   GET USER PROFILE
+   GET USER PROFILE (PRIVATE SAFE)
 ====================== */
 router.get("/profile/:id", auth, async (req, res) => {
   const user = await User.findById(req.params.id).select(
     "name email profilePic bio followers following isPrivate followRequests"
   );
+
   if (!user) return res.status(404).json({ msg: "User not found" });
 
   const isOwner = req.user.id === req.params.id;
@@ -50,6 +51,7 @@ router.get("/profile/:id", auth, async (req, res) => {
 router.put("/profile", auth, async (req, res) => {
   const { bio, profilePic, isPrivate } = req.body;
   const user = await User.findById(req.user.id);
+
   if (!user) return res.status(404).json({ msg: "User not found" });
 
   if (bio !== undefined) user.bio = bio;
@@ -66,18 +68,25 @@ router.put("/profile", auth, async (req, res) => {
 router.post("/follow/:id", auth, async (req, res) => {
   const me = await User.findById(req.user.id);
   const other = await User.findById(req.params.id);
+
   if (!other) return res.status(404).json({ msg: "User not found" });
 
-  // UNFOLLOW
+  // 🔁 UNFOLLOW
   if (me.following.includes(other._id)) {
     me.following.pull(other._id);
     other.followers.pull(me._id);
+
     await me.save();
     await other.save();
-    return res.json({ followed: false });
+
+    return res.json({
+      followed: false,
+      followersCount: other.followers.length,
+      followingCount: me.following.length
+    });
   }
 
-  // PRIVATE → FOLLOW REQUEST
+  // 🔒 PRIVATE PROFILE → SEND REQUEST
   if (other.isPrivate) {
     if (!other.followRequests.includes(me._id)) {
       other.followRequests.push(me._id);
@@ -91,12 +100,14 @@ router.post("/follow/:id", auth, async (req, res) => {
         link: `/profile.html?id=${me._id}`
       });
     }
+
     return res.json({ requested: true });
   }
 
-  // PUBLIC → DIRECT FOLLOW
+  // 🔓 PUBLIC PROFILE → DIRECT FOLLOW
   me.following.push(other._id);
   other.followers.push(me._id);
+
   await me.save();
   await other.save();
 
@@ -108,15 +119,19 @@ router.post("/follow/:id", auth, async (req, res) => {
     link: `/profile.html?id=${me._id}`
   });
 
-  res.json({ followed: true });
+  res.json({
+    followed: true,
+    followersCount: other.followers.length,
+    followingCount: me.following.length
+  });
 });
 
 /* ======================
    ACCEPT FOLLOW REQUEST
 ====================== */
 router.post("/follow-accept/:id", auth, async (req, res) => {
-  const me = await User.findById(req.user.id);
-  const other = await User.findById(req.params.id);
+  const me = await User.findById(req.user.id);       // profile owner
+  const other = await User.findById(req.params.id); // requester
 
   if (!me.followRequests.includes(other._id)) {
     return res.status(400).json({ msg: "No request found" });
@@ -145,21 +160,32 @@ router.post("/follow-accept/:id", auth, async (req, res) => {
 ====================== */
 router.post("/follow-reject/:id", auth, async (req, res) => {
   const me = await User.findById(req.user.id);
+
   me.followRequests.pull(req.params.id);
   await me.save();
+
   res.json({ rejected: true });
 });
 
 /* ======================
-   FOLLOWERS / FOLLOWING
+   GET FOLLOWERS
 ====================== */
 router.get("/:id/followers", auth, async (req, res) => {
-  const user = await User.findById(req.params.id).populate("followers", "name profilePic");
+  const user = await User.findById(req.params.id)
+    .populate("followers", "name profilePic");
+
+  if (!user) return res.status(404).json({ msg: "User not found" });
   res.json(user.followers);
 });
 
+/* ======================
+   GET FOLLOWING
+====================== */
 router.get("/:id/following", auth, async (req, res) => {
-  const user = await User.findById(req.params.id).populate("following", "name profilePic");
+  const user = await User.findById(req.params.id)
+    .populate("following", "name profilePic");
+
+  if (!user) return res.status(404).json({ msg: "User not found" });
   res.json(user.following);
 });
 
@@ -167,7 +193,9 @@ router.get("/:id/following", auth, async (req, res) => {
    FRIEND LIST (CHAT)
 ====================== */
 router.get("/friends", auth, async (req, res) => {
-  const user = await User.findById(req.user.id).populate("friends", "name profilePic");
+  const user = await User.findById(req.user.id)
+    .populate("friends", "name profilePic");
+
   res.json(user.friends || []);
 });
 
