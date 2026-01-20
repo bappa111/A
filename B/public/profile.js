@@ -27,8 +27,13 @@ async function loadProfile() {
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
+  /* ======================
+     FLAGS (🔥 FIXED)
+  ====================== */
   const isOwner = profileUserId === myId;
-  const isFollower = data.user.followers.includes(myId);
+  const isFollower = data.user.followers.some(
+    id => id.toString() === myId
+  );
   const isPrivate = data.user.isPrivate === true;
 
   /* ======================
@@ -44,6 +49,14 @@ async function loadProfile() {
   const picInput = document.getElementById("profilePicInput");
   const followersCount = document.getElementById("followersCount");
   const followingCount = document.getElementById("followingCount");
+
+  /* ======================
+     FORCE HIDE ALL (🔥 IMPORTANT)
+  ====================== */
+  saveBtn.style.display = "none";
+  picInput.style.display = "none";
+  chatBtn.style.display = "none";
+  followBtn.style.display = "none";
 
   /* ======================
      BASIC INFO
@@ -62,30 +75,28 @@ async function loadProfile() {
   ====================== */
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
-    chatBtn.style.display = "none";
-    saveBtn.style.display = "none";
-    picInput.style.display = "none";
-
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
     return;
   }
 
   /* ======================
-     OWNER / VISITOR UI
+     OWNER UI
   ====================== */
   if (isOwner) {
-    followBtn.style.display = "none";
-    chatBtn.style.display = "none";
     saveBtn.style.display = "inline-block";
     picInput.style.display = "inline-block";
-  } else {
-    saveBtn.style.display = "none";
-    picInput.style.display = "none";
-    chatBtn.style.display = "inline-block";
-
+  } 
+  /* ======================
+     VISITOR UI
+  ====================== */
+  else {
     followBtn.style.display = "inline-block";
     followBtn.innerText = isFollower ? "Unfollow" : "Follow";
+
+    if (!isPrivate || isFollower) {
+      chatBtn.style.display = "inline-block";
+    }
   }
 
   /* ======================
