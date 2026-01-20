@@ -1,4 +1,4 @@
-postsDiv.innerHTML = "";
+posts.innerHTML = "";
 
 data.posts.forEach(p => {
   const div = document.createElement("div");
@@ -9,14 +9,14 @@ data.posts.forEach(p => {
   div.innerHTML = `
     <p>${p.content || ""}</p>
 
-    ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+    ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
 
     ${p.video ? `
-      <video controls style="max-width:100%">
+      <video controls style="max-width:100%;margin-top:6px">
         <source src="${p.video}">
       </video>
     ` : ""}
   `;
 
-  postsDiv.appendChild(div);
+  posts.appendChild(div);
 });

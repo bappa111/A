@@ -7,25 +7,18 @@ const auth = require("../middleware/authMiddleware");
 const router = express.Router();
 
 /* ======================
-   SEND MESSAGE (PRIVATE SAFE)
+   SEND MESSAGE (PRIVATE HARD BLOCK)
 ====================== */
 router.post("/", auth, async (req, res) => {
   const { receiverId, message, image, voice, video } = req.body;
 
-  if (!receiverId)
-    return res.status(400).json({ msg: "receiverId required" });
-
   const sender = await User.findById(req.user.id);
   const receiver = await User.findById(receiverId);
 
-  if (!receiver)
-    return res.status(404).json({ msg: "User not found" });
+  if (!receiver) return res.status(404).json({ msg: "User not found" });
 
-  // 🔒 HARD BLOCK
-  if (
-    receiver.isPrivate &&
-    !receiver.followers.includes(sender._id)
-  ) {
+  // 🔒 HARD BLOCK — NO FOLLOW = NO CHAT
+  if (receiver.isPrivate && !receiver.followers.includes(sender._id)) {
     return res.status(403).json({ msg: "Follow required to chat" });
   }
 

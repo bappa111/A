@@ -25,7 +25,7 @@ async function loadNotifications() {
 
     let actions = "";
 
-    if (n.type === "follow_request") {
+    if (n.type === "follow_request" && !n.seen) {
       actions = `
         <button onclick="acceptFollow('${n.fromUser._id}', '${n._id}')">Accept</button>
         <button onclick="rejectFollow('${n.fromUser._id}', '${n._id}')">Reject</button>
