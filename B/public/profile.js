@@ -53,11 +53,34 @@ async function loadProfile() {
   /* ======================
      FORCE HIDE ALL (🔥 IMPORTANT)
   ====================== */
+  // DEFAULT
   saveBtn.style.display = "none";
   picInput.style.display = "none";
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
 
+  // 🔒 PRIVATE PROFILE
+  if (isPrivate && !isOwner && !isFollower) {
+    postsSection.style.display = "none";
+    followBtn.style.display = "inline-block";
+    followBtn.innerText = "Follow";
+    return;
+  }
+
+  // 👑 OWNER
+  if (isOwner) {
+    saveBtn.style.display = "inline-block";
+    picInput.style.display = "inline-block";
+    return;
+  }
+
+  // 👤 VISITOR
+  followBtn.style.display = "inline-block";
+  followBtn.innerText = isFollower ? "Unfollow" : "Follow";
+
+  if (!isPrivate || isFollower) {
+    chatBtn.style.display = "inline-block";
+  }
   /* ======================
      BASIC INFO
   ====================== */
