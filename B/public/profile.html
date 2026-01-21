@@ -1,22 +1,39 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>Profile</title>
+</head>
 <body>
 
-<h3>Edit Profile</h3>
+<h2>Edit Profile</h2>
 
-<img id="profilePic" width="120"><br><br>
+<!-- PROFILE PIC -->
+<img id="profilePic" src="" width="120" style="display:none"><br><br>
+
+<!-- UPLOAD -->
 <input type="file" id="profilePicInput"><br><br>
 
-<textarea id="bio"></textarea><br><br>
+<!-- BIO -->
+<textarea id="bio" placeholder="Your bio"></textarea><br><br>
 
-<button id="chatBtn" onclick="openDM()">Chat</button>
+<!-- COUNTS -->
+<div>
+  Followers: <span id="followersCount">0</span> |
+  Following: <span id="followingCount">0</span>
+</div>
+<br>
+
+<!-- ACTION BUTTONS -->
 <button id="saveBtn" onclick="updateProfile()">Save</button>
+<button id="chatBtn" onclick="openDM()">Chat</button>
 <button id="followBtn" onclick="toggleFollow()">Follow</button>
 
 <hr>
 
+<!-- POSTS -->
+<h3>Your Posts</h3>
 <div id="postsSection">
-  <h4>Your Posts</h4>
   <div id="posts"></div>
 </div>
 
