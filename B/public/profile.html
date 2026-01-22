@@ -1,28 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Profile</title>
 </head>
 <body>
 
-<h2>Edit Profile</h2>
+<h3>Edit Profile</h3>
 
 <!-- PROFILE PIC -->
-<img id="profilePic" src="" width="120" style="display:none"><br><br>
+<img id="profilePic" width="120" style="display:block;margin-bottom:10px" />
 
-<!-- UPLOAD -->
-<input type="file" id="profilePicInput"><br><br>
+<input type="file" id="profilePicInput" accept="image/*" />
+
+<br><br>
 
 <!-- BIO -->
-<textarea id="bio" placeholder="Your bio"></textarea><br><br>
+<input id="bio" placeholder="Your bio" />
 
-<!-- COUNTS -->
-<div>
+<br><br>
+
+<!-- FOLLOW COUNTS -->
+<p>
   Followers: <span id="followersCount">0</span> |
   Following: <span id="followingCount">0</span>
-</div>
-<br>
+</p>
 
 <!-- ACTION BUTTONS -->
 <button id="saveBtn" onclick="updateProfile()">Save</button>
@@ -32,8 +34,8 @@
 <hr>
 
 <!-- POSTS -->
-<h3>Your Posts</h3>
 <div id="postsSection">
+  <h4>Your Posts</h4>
   <div id="posts"></div>
 </div>
 
