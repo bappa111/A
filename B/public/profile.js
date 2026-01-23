@@ -181,18 +181,21 @@ function openDM() {
 
 loadProfile();
 
-/* follow popup */
+
+/* ======================
+   FOLLOW POPUP (FINAL)
+====================== */
 
 function closeModal() {
   document.getElementById("followModal").style.display = "none";
 }
 
 async function openFollowers() {
-  openFollowList("followers");
+  await openFollowList("followers");
 }
 
 async function openFollowing() {
-  openFollowList("following");
+  await openFollowList("following");
 }
 
 async function openFollowList(type) {
@@ -205,16 +208,59 @@ async function openFollowList(type) {
 
   title.innerText = type === "followers" ? "Followers" : "Following";
 
+  list.innerHTML = "";
+
+  /* ======================
+     🔔 FOLLOW REQUESTS (ONLY OWNER + FOLLOWERS TAB)
+  ====================== */
+  if (type === "followers" && profileUserId === myId) {
+    const profileRes = await fetch(
+      API + "/api/users/profile/" + myId,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    const profileData = await profileRes.json();
+
+    const requests = profileData.user.followRequests || [];
+
+    if (requests.length) {
+      const h = document.createElement("h4");
+      h.innerText = "Follow Requests";
+      list.appendChild(h);
+
+      for (let uid of requests) {
+        const uRes = await fetch(
+          API + "/api/users/profile/" + uid,
+          { headers: { Authorization: "Bearer " + token } }
+        );
+        const uData = await uRes.json();
+
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+
+        div.innerHTML = `
+          <b>${uData.user.name}</b><br>
+          <button onclick="acceptFollow('${uid}')">Accept</button>
+          <button onclick="rejectFollow('${uid}')">Reject</button>
+          <hr>
+        `;
+
+        list.appendChild(div);
+      }
+    }
+  }
+
+  /* ======================
+     👥 FOLLOWERS / FOLLOWING LIST
+  ====================== */
   const res = await fetch(
     API + "/api/users/" + profileUserId + "/" + type,
     { headers: { Authorization: "Bearer " + token } }
   );
 
   const users = await res.json();
-  list.innerHTML = "";
 
   if (!users.length) {
-    list.innerHTML = "<p>No users</p>";
+    list.innerHTML += "<p>No users</p>";
     return;
   }
 
@@ -238,4 +284,26 @@ async function openFollowList(type) {
 
     list.appendChild(div);
   });
+}
+
+/* ======================
+   ACCEPT / REJECT
+====================== */
+async function acceptFollow(userId) {
+  await fetch(API + "/api/users/follow-accept/" + userId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadProfile();
+  openFollowers();
+}
+
+async function rejectFollow(userId) {
+  await fetch(API + "/api/users/follow-reject/" + userId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  openFollowers();
 }
