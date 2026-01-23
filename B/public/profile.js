@@ -1,9 +1,6 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
-/* ======================
-   GET MY ID FROM TOKEN
-====================== */
 function getMyId() {
   try {
     return JSON.parse(atob(token.split(".")[1])).id;
@@ -16,9 +13,6 @@ const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
 const profileUserId = params.get("id") || myId;
 
-/* ======================
-   LOAD PROFILE
-====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
@@ -27,18 +21,13 @@ async function loadProfile() {
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
-  /* ======================
-     FLAGS (🔥 FIXED)
-  ====================== */
   const isOwner = profileUserId === myId;
   const isFollower = data.user.followers.some(
     id => id.toString() === myId
   );
   const isPrivate = data.user.isPrivate === true;
 
-  /* ======================
-     ELEMENTS
-  ====================== */
+  // ELEMENTS
   const img = document.getElementById("profilePic");
   const bio = document.getElementById("bio");
   const postsSection = document.getElementById("postsSection");
@@ -51,38 +40,16 @@ async function loadProfile() {
   const followingCount = document.getElementById("followingCount");
 
   /* ======================
-     FORCE HIDE ALL (🔥 IMPORTANT)
+     RESET UI (IMPORTANT)
   ====================== */
-  // DEFAULT
   saveBtn.style.display = "none";
   picInput.style.display = "none";
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
+  postsSection.style.display = "block";
 
-  // 🔒 PRIVATE PROFILE
-  if (isPrivate && !isOwner && !isFollower) {
-    postsSection.style.display = "none";
-    followBtn.style.display = "inline-block";
-    followBtn.innerText = "Follow";
-    return;
-  }
-
-  // 👑 OWNER
-  if (isOwner) {
-    saveBtn.style.display = "inline-block";
-    picInput.style.display = "inline-block";
-    return;
-  }
-
-  // 👤 VISITOR
-  followBtn.style.display = "inline-block";
-  followBtn.innerText = isFollower ? "Unfollow" : "Follow";
-
-  if (!isPrivate || isFollower) {
-    chatBtn.style.display = "inline-block";
-  }
   /* ======================
-     BASIC INFO
+     BASIC INFO (ALWAYS)
   ====================== */
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   img.style.display = "block";
@@ -94,7 +61,7 @@ async function loadProfile() {
   followingCount.innerText = data.user.followingCount || 0;
 
   /* ======================
-     🔒 PRIVATE PROFILE LOCK
+     PRIVATE PROFILE LOCK
   ====================== */
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
@@ -125,7 +92,6 @@ async function loadProfile() {
   /* ======================
      POSTS RENDER
   ====================== */
-  postsSection.style.display = "block";
   posts.innerHTML = "";
 
   data.posts.forEach(p => {
@@ -161,21 +127,13 @@ async function toggleFollow() {
 
   const data = await res.json();
 
-  if (data.followed === true) {
-    followBtn.innerText = "Unfollow";
-  } else if (data.followed === false) {
-    followBtn.innerText = "Follow";
-  }
+  document.getElementById("followersCount").innerText =
+    data.followersCount ?? document.getElementById("followersCount").innerText;
 
-  if (data.followersCount !== undefined) {
-    document.getElementById("followersCount").innerText =
-      data.followersCount;
-  }
+  document.getElementById("followingCount").innerText =
+    data.followingCount ?? document.getElementById("followingCount").innerText;
 
-  if (data.followingCount !== undefined) {
-    document.getElementById("followingCount").innerText =
-      data.followingCount;
-  }
+  loadProfile();
 }
 
 /* ======================
@@ -217,14 +175,8 @@ async function updateProfile() {
   loadProfile();
 }
 
-/* ======================
-   OPEN CHAT
-====================== */
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
 }
 
-/* ======================
-   INIT
-====================== */
 loadProfile();
