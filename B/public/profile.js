@@ -180,3 +180,62 @@ function openDM() {
 }
 
 loadProfile();
+
+/* follow popup */
+
+function closeModal() {
+  document.getElementById("followModal").style.display = "none";
+}
+
+async function openFollowers() {
+  openFollowList("followers");
+}
+
+async function openFollowing() {
+  openFollowList("following");
+}
+
+async function openFollowList(type) {
+  const modal = document.getElementById("followModal");
+  const list = document.getElementById("modalList");
+  const title = document.getElementById("modalTitle");
+
+  modal.style.display = "block";
+  list.innerHTML = "Loading...";
+
+  title.innerText = type === "followers" ? "Followers" : "Following";
+
+  const res = await fetch(
+    API + "/api/users/" + profileUserId + "/" + type,
+    { headers: { Authorization: "Bearer " + token } }
+  );
+
+  const users = await res.json();
+  list.innerHTML = "";
+
+  if (!users.length) {
+    list.innerHTML = "<p>No users</p>";
+    return;
+  }
+
+  users.forEach(u => {
+    const div = document.createElement("div");
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.gap = "10px";
+    div.style.marginBottom = "8px";
+    div.style.cursor = "pointer";
+
+    div.innerHTML = `
+      <img src="${u.profilePic || "https://via.placeholder.com/40"}"
+           width="40" height="40" style="border-radius:50%">
+      <b>${u.name}</b>
+    `;
+
+    div.onclick = () => {
+      location.href = "profile.html?id=" + u._id;
+    };
+
+    list.appendChild(div);
+  });
+}
