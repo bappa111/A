@@ -16,11 +16,25 @@ router.get("/", auth, async (req, res) => {
 });
 
 /* ======================
+   GET UNSEEN COUNT
+====================== */
+router.get("/count", auth, async (req, res) => {
+  const count = await Notification.countDocuments({
+    userId: req.user.id,
+    seen: false
+  });
+
+  res.json({ count });
+});
+
+/* ======================
    MARK AS SEEN
 ====================== */
 router.post("/seen/:id", auth, async (req, res) => {
   await Notification.findByIdAndUpdate(req.params.id, { seen: true });
   res.json({ ok: true });
 });
+
+
 
 module.exports = router;

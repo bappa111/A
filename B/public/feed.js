@@ -257,8 +257,28 @@ function goProfile(userId) {
   location.href = "profile.html?id=" + userId;
 }
 
+async function loadNotificationCount() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  const res = await fetch(
+    "https://a-kisk.onrender.com/api/notifications/count",
+    {
+      headers: { Authorization: "Bearer " + token }
+    }
+  );
+
+  const data = await res.json();
+
+  const badge = document.getElementById("notifCount");
+  if (badge) {
+    badge.innerText = data.count || 0;
+  }
+}
+
 /* ======================
    INIT
 ====================== */
 loadMyProfilePic();
 loadFeed();
+loadNotificationCount();

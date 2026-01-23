@@ -213,42 +213,43 @@ async function openFollowList(type) {
   /* ======================
      🔔 FOLLOW REQUESTS (ONLY OWNER + FOLLOWERS TAB)
   ====================== */
-  if (type === "followers" && profileUserId === myId) {
-    const profileRes = await fetch(
-      API + "/api/users/profile/" + myId,
-      { headers: { Authorization: "Bearer " + token } }
-    );
-    const profileData = await profileRes.json();
+  /* ======================
+   🔔 FOLLOW REQUESTS (OWNER ONLY)
+====================== */
+if (type === "followers" && profileUserId === myId) {
+  const reqRes = await fetch(
+    API + "/api/users/follow-requests",
+    { headers: { Authorization: "Bearer " + token } }
+  );
 
-    const requests = profileData.user.followRequests || [];
+  const requests = await reqRes.json();
 
-    if (requests.length) {
-      const h = document.createElement("h4");
-      h.innerText = "Follow Requests";
-      list.appendChild(h);
+  if (requests.length) {
+    const h = document.createElement("h4");
+    h.innerText = "Follow Requests";
+    list.appendChild(h);
 
-      for (let uid of requests) {
-        const uRes = await fetch(
-          API + "/api/users/profile/" + uid,
-          { headers: { Authorization: "Bearer " + token } }
-        );
-        const uData = await uRes.json();
+    requests.forEach(u => {
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "10px";
+      div.style.marginBottom = "10px";
 
-        const div = document.createElement("div");
-        div.style.marginBottom = "10px";
+      div.innerHTML = `
+        <img src="${u.profilePic || "https://via.placeholder.com/40"}"
+             width="40" height="40" style="border-radius:50%">
+        <b>${u.name}</b>
+        <button onclick="acceptFollow('${u._id}')">Accept</button>
+        <button onclick="rejectFollow('${u._id}')">Reject</button>
+      `;
 
-        div.innerHTML = `
-          <b>${uData.user.name}</b><br>
-          <button onclick="acceptFollow('${uid}')">Accept</button>
-          <button onclick="rejectFollow('${uid}')">Reject</button>
-          <hr>
-        `;
+      list.appendChild(div);
+    });
 
-        list.appendChild(div);
-      }
-    }
+    list.appendChild(document.createElement("hr"));
   }
-
+}
   /* ======================
      👥 FOLLOWERS / FOLLOWING LIST
   ====================== */
