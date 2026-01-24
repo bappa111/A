@@ -19,18 +19,25 @@ function getMyId() {
 }
 
 /* ======================
+   RESET FEED (🔥 IMPORTANT)
+====================== */
+function resetFeed() {
+  page = 1;
+  loading = false;
+  noMorePosts = false;
+  const feed = document.getElementById("feed");
+  if (feed) feed.innerHTML = "";
+}
+
+/* ======================
    SOCKET CONNECT (REALTIME)
 ====================== */
 const socket = io("https://a-kisk.onrender.com", {
   query: { userId: getMyId() }
 });
 
-socket.on("notification", (notif) => {
-  console.log("🔔 Realtime notification:", notif);
+socket.on("notification", () => {
   loadNotificationCount();
-
-  // optional toast
-  // alert(notif.text);
 });
 
 /* ======================
@@ -104,11 +111,12 @@ async function createPost() {
   document.getElementById("postImage").value = "";
   document.getElementById("postVideo").value = "";
 
+  resetFeed();
   loadFeed();
 }
 
 /* ======================
-   LOAD FEED
+   LOAD FEED (PAGINATED)
 ====================== */
 async function loadFeed() {
   if (loading || noMorePosts) return;
@@ -123,6 +131,7 @@ async function loadFeed() {
 
   if (!posts.length) {
     noMorePosts = true;
+    loading = false;
     return;
   }
 
@@ -167,7 +176,7 @@ async function loadFeed() {
 }
 
 /* ======================
-   PROFILE MENU
+   PROFILE / AUTH
 ====================== */
 async function loadMyProfilePic() {
   const myId = getMyId();
@@ -200,6 +209,8 @@ async function toggleLike(postId) {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
+
+  resetFeed();
   loadFeed();
 }
 
@@ -218,6 +229,7 @@ async function addComment(postId) {
   });
 
   input.value = "";
+  resetFeed();
   loadFeed();
 }
 
@@ -226,6 +238,8 @@ async function deletePost(postId) {
     method: "DELETE",
     headers: { Authorization: "Bearer " + token }
   });
+
+  resetFeed();
   loadFeed();
 }
 
@@ -255,10 +269,12 @@ async function loadNotificationCount() {
 ====================== */
 loadMyProfilePic();
 loadNotificationCount();
+resetFeed();
+loadFeed();
 
-
-/* scrols */
-
+/* ======================
+   INFINITE SCROLL
+====================== */
 window.addEventListener("scroll", () => {
   const nearBottom =
     window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
