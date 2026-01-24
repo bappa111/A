@@ -157,6 +157,30 @@ async function createPost() {
 }
 
 /* ======================
+   ADD COMMENT
+====================== */
+async function addComment(postId) {
+  const input = document.getElementById("c-" + postId);
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  await fetch(API + "/api/posts/" + postId + "/comment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ text })
+  });
+
+  input.value = "";
+  resetFeed();
+  loadFeed();
+}
+
+/* ======================
    LOAD FEED (PAGINATED)
 ====================== */
 async function loadFeed() {
@@ -168,7 +192,6 @@ async function loadFeed() {
   });
 
   const posts = await res.json();
-
   if (!posts.length) {
     noMorePosts = true;
     loading = false;
@@ -197,7 +220,6 @@ async function loadFeed() {
       ${renderFollowedBy(p)}
 
       <p>${p.content || ""}</p>
-
       <div style="font-size:12px;color:#888;margin-top:4px">
         ${timeAgo(p.createdAt)}
       </div>
@@ -209,6 +231,22 @@ async function loadFeed() {
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
+      </div>
+
+      <div style="margin-top:6px">
+        ${(p.comments || []).map(c => `
+          <div style="margin-left:10px;font-size:14px">
+            💬 ${c.text}
+            <div style="font-size:11px;color:#888">
+              ${timeAgo(c.createdAt)}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div style="margin-top:6px">
+        <input id="c-${p._id}" placeholder="Write comment..." style="width:70%" />
+        <button onclick="addComment('${p._id}')">Send</button>
       </div>
     `;
 
