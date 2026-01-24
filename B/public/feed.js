@@ -1,6 +1,10 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
+let page = 1;
+let loading = false;
+let noMorePosts = false;
+
 /* ======================
    HELPERS
 ====================== */
@@ -107,14 +111,22 @@ async function createPost() {
    LOAD FEED
 ====================== */
 async function loadFeed() {
-  const res = await fetch(API + "/api/posts", {
-    headers: { Authorization: "Bearer " + token }
-  });
+  if (loading || noMorePosts) return;
+  loading = true;
+
+  const res = await fetch(
+    API + "/api/posts?page=" + page,
+    { headers: { Authorization: "Bearer " + token } }
+  );
 
   const posts = await res.json();
-  const feed = document.getElementById("feed");
-  feed.innerHTML = "";
 
+  if (!posts.length) {
+    noMorePosts = true;
+    return;
+  }
+
+  const feed = document.getElementById("feed");
   const myId = getMyId();
 
   posts.forEach(p => {
@@ -129,43 +141,29 @@ async function loadFeed() {
       <div style="display:flex;align-items:center;gap:8px;cursor:pointer"
            onclick="goProfile('${p.userId._id}')">
         <img src="${p.userId.profilePic || 'https://via.placeholder.com/32'}"
-             style="width:32px;height:32px;border-radius:50%;object-fit:cover"/>
-        <b>${p.userId.name || "User"}</b>
+             style="width:32px;height:32px;border-radius:50%" />
+        <b>${p.userId.name}</b>
       </div>
 
       ${renderFollowedBy(p)}
 
       <p>${p.content || ""}</p>
 
-      ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px"/>` : ""}
-      ${p.video ? `
-        <video controls style="max-width:100%;margin-top:6px">
-          <source src="${p.video}" type="video/mp4">
-        </video>` : ""}
+      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
 
-      <div style="margin-top:6px;display:flex;gap:10px">
+      <div>
         <button onclick="toggleLike('${p._id}')">
           👍 Like (${p.likes?.length || 0})
         </button>
-        ${p.userId._id === myId
-          ? `<button onclick="deletePost('${p._id}')" style="color:red">🗑️ Delete</button>`
-          : ""}
-      </div>
-
-      <div style="margin-top:6px">
-        ${(p.comments || []).map(c => `
-          <div style="margin-left:10px;font-size:14px">💬 ${c.text}</div>
-        `).join("")}
-      </div>
-
-      <div style="margin-top:6px">
-        <input placeholder="Write comment..." id="c-${p._id}" style="width:70%"/>
-        <button onclick="addComment('${p._id}')">Send</button>
       </div>
     `;
 
     feed.appendChild(div);
   });
+
+  page++;
+  loading = false;
 }
 
 /* ======================
@@ -256,5 +254,16 @@ async function loadNotificationCount() {
    INIT
 ====================== */
 loadMyProfilePic();
-loadFeed();
 loadNotificationCount();
+
+
+/* scrols */
+
+window.addEventListener("scroll", () => {
+  const nearBottom =
+    window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
+
+  if (nearBottom) {
+    loadFeed();
+  }
+});

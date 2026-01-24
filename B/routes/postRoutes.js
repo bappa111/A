@@ -41,23 +41,30 @@ router.post("/", auth, async (req, res) => {
 /* ======================
    GET FEED
 ====================== */
+/* ======================
+   GET FEED (INFINITE SCROLL)
+====================== */
 router.get("/", auth, async (req, res) => {
   const myId = req.user.id;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = 5; // 🔥 5 posts per scroll
+  const skip = (page - 1) * limit;
 
   const posts = await Post.find()
     .populate("userId", "name profilePic followers")
     .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
     .lean();
 
   const formatted = posts.map(p => {
     const followedBy = (p.userId.followers || [])
-      .filter(u => u.toString() !== myId)
-      .slice(0, 2);
+      .filter(u => u._id.toString() !== myId)
+      .slice(0, 2)
+      .map(u => u.name);
 
-    return {
-      ...p,
-      followedBy
-    };
+    return { ...p, followedBy };
   });
 
   res.json(formatted);
