@@ -331,10 +331,12 @@ async function loadNotificationCount() {
 /* ======================
    INIT
 ====================== */
-loadMyProfilePic();
-loadNotificationCount();
-resetFeed();
-loadFeed();
+document.addEventListener("DOMContentLoaded", () => {
+  loadMyProfilePic();
+  loadNotificationCount();
+  resetFeed();
+  loadFeed();
+});
 
 /* ======================
    INFINITE SCROLL
