@@ -56,7 +56,7 @@ router.get("/", auth, async (req, res) => {
 
     const posts = await Post.find()
       .populate("userId", "name profilePic followers")
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
