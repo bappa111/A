@@ -3,7 +3,24 @@ const Post = require("../models/Post");
 const Notification = require("../models/Notification");
 const auth = require("../middleware/authMiddleware");
 
+/* 🔥 SOCKET (REALTIME) */
+const { getIO } = require("../socket/socket");
+
 const router = express.Router();
+
+/* ======================
+   REALTIME NOTIFICATION HELPER
+====================== */
+function emitNotification(userId, notification) {
+  try {
+    const io = getIO();
+    if (!io) return;
+
+    io.to(userId.toString()).emit("notification", notification);
+  } catch (e) {
+    console.log("Realtime emit error:", e.message);
+  }
+}
 
 /* ======================
    CREATE POST
@@ -34,11 +51,13 @@ router.get("/", auth, async (req, res) => {
 
   const formatted = posts.map(p => {
     const followedBy = (p.userId.followers || [])
-      .filter(u => u._id.toString() !== myId)
-      .slice(0, 2)
-      .map(u => u.name);
+      .filter(u => u.toString() !== myId)
+      .slice(0, 2);
 
-    return { ...p, followedBy };
+    return {
+      ...p,
+      followedBy
+    };
   });
 
   res.json(formatted);
@@ -49,24 +68,35 @@ router.get("/", auth, async (req, res) => {
 ====================== */
 router.post("/:id/like", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ msg: "Post not found" });
+  if (!post) {
+    return res.status(404).json({ msg: "Post not found" });
+  }
 
   const userId = req.user.id;
-  const index = post.likes.indexOf(userId);
+  const index = post.likes.findIndex(
+    id => id.toString() === userId
+  );
 
+  /* 👍 LIKE */
   if (index === -1) {
     post.likes.push(userId);
 
+    // 🔔 notify only if not self
     if (post.userId.toString() !== userId) {
-      await Notification.create({
+      const notif = await Notification.create({
         userId: post.userId,
         fromUser: userId,
         type: "like",
         text: "Someone liked your post",
-        link: `/profile.html?id=${userId}`
+        link: `/feed.html?id=${post._id}`
       });
+
+      /* 🔥 REALTIME */
+      emitNotification(post.userId, notif);
     }
-  } else {
+  }
+  /* 👎 UNLIKE */
+  else {
     post.likes.splice(index, 1);
   }
 
@@ -79,7 +109,9 @@ router.post("/:id/like", auth, async (req, res) => {
 ====================== */
 router.post("/:id/comment", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ msg: "Post not found" });
+  if (!post) {
+    return res.status(404).json({ msg: "Post not found" });
+  }
 
   post.comments.push({
     userId: req.user.id,
@@ -88,14 +120,18 @@ router.post("/:id/comment", auth, async (req, res) => {
 
   await post.save();
 
+  // 🔔 notify only if not self
   if (post.userId.toString() !== req.user.id) {
-    await Notification.create({
+    const notif = await Notification.create({
       userId: post.userId,
       fromUser: req.user.id,
       type: "comment",
       text: "Someone commented on your post",
-      link: `/profile.html?id=${req.user.id}`
+      link: `/post.html?id=${post._id}`
     });
+
+    /* 🔥 REALTIME */
+    emitNotification(post.userId, notif);
   }
 
   res.json(post.comments);
@@ -106,7 +142,9 @@ router.post("/:id/comment", auth, async (req, res) => {
 ====================== */
 router.delete("/:id", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
-  if (!post) return res.status(404).json({ msg: "Post not found" });
+  if (!post) {
+    return res.status(404).json({ msg: "Post not found" });
+  }
 
   if (post.userId.toString() !== req.user.id) {
     return res.status(403).json({ msg: "Not allowed" });

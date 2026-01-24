@@ -4,7 +4,25 @@ const Post = require("../models/Post");
 const Notification = require("../models/Notification");
 const auth = require("../middleware/authMiddleware");
 
+/* 🔥 SOCKET (REALTIME) */
+const { getIO } = require("../socket/socket");
+
 const router = express.Router();
+
+/* ======================
+   REALTIME NOTIFICATION HELPER
+====================== */
+function emitNotification(userId, notification) {
+  try {
+    const io = getIO();
+    if (!io) return;
+
+    // 🔥 userId room এ পাঠানো
+    io.to(userId.toString()).emit("notification", notification);
+  } catch (e) {
+    console.log("Realtime emit error:", e.message);
+  }
+}
 
 /* ======================
    GET ALL USERS (except me)
@@ -45,8 +63,6 @@ router.get("/profile/:id", auth, async (req, res) => {
   }
 
   const isOwner = req.user.id === req.params.id;
-
-  // ✅ FIX: ObjectId safe compare
   const isFollower = user.followers.some(
     id => id.toString() === req.user.id
   );
@@ -72,8 +88,8 @@ router.get("/profile/:id", auth, async (req, res) => {
 ====================== */
 router.put("/profile", auth, async (req, res) => {
   const { bio, profilePic, isPrivate } = req.body;
-
   const user = await User.findById(req.user.id);
+
   if (!user) {
     return res.status(404).json({ msg: "User not found" });
   }
@@ -102,7 +118,7 @@ router.post("/follow/:id", auth, async (req, res) => {
     return res.status(400).json({ msg: "Cannot follow yourself" });
   }
 
-  // 🔁 UNFOLLOW
+  /* 🔁 UNFOLLOW */
   if (me.following.includes(other._id)) {
     me.following.pull(other._id);
     other.followers.pull(me._id);
@@ -117,38 +133,44 @@ router.post("/follow/:id", auth, async (req, res) => {
     });
   }
 
-  // 🔒 PRIVATE PROFILE → SEND REQUEST
+  /* 🔒 PRIVATE PROFILE → SEND REQUEST */
   if (other.isPrivate) {
     if (!other.followRequests.includes(me._id)) {
       other.followRequests.push(me._id);
       await other.save();
 
-      await Notification.create({
+      const notif = await Notification.create({
         userId: other._id,
         fromUser: me._id,
         type: "follow_request",
         text: `${me.name} sent you a follow request`,
         link: `/profile.html?id=${me._id}`
       });
+
+      /* 🔥 REALTIME */
+      emitNotification(other._id, notif);
     }
 
     return res.json({ requested: true });
   }
 
-  // 🔓 PUBLIC PROFILE → DIRECT FOLLOW
+  /* 🔓 PUBLIC PROFILE → DIRECT FOLLOW */
   me.following.push(other._id);
   other.followers.push(me._id);
 
   await me.save();
   await other.save();
 
-  await Notification.create({
+  const notif = await Notification.create({
     userId: other._id,
     fromUser: me._id,
     type: "new_follower",
     text: `${me.name} started following you`,
     link: `/profile.html?id=${me._id}`
   });
+
+  /* 🔥 REALTIME */
+  emitNotification(other._id, notif);
 
   res.json({
     followed: true,
@@ -175,13 +197,16 @@ router.post("/follow-accept/:id", auth, async (req, res) => {
   await me.save();
   await other.save();
 
-  await Notification.create({
+  const notif = await Notification.create({
     userId: other._id,
     fromUser: me._id,
     type: "follow_accept",
     text: `${me.name} accepted your follow request`,
     link: `/profile.html?id=${me._id}`
   });
+
+  /* 🔥 REALTIME */
+  emitNotification(other._id, notif);
 
   res.json({ accepted: true });
 });

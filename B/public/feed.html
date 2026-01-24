@@ -55,8 +55,21 @@
     <button onclick="location.href='chat.html'">💬</button>  </div>
 </div>
 
-<a href="notifications.html">
-  🔔 Notifications (<span id="notifCount">0</span>)
+<a href="notifications.html" style="position:relative">
+  🔔
+  <span
+    id="notifCount"
+    style="
+      position:absolute;
+      top:-5px;
+      right:-8px;
+      background:red;
+      color:white;
+      font-size:12px;
+      padding:2px 6px;
+      border-radius:50%;
+    "
+  >0</span>
 </a>
 
 <textarea id="postText" placeholder="What's on your mind?"></textarea><br>
@@ -71,5 +84,8 @@
 <div id="feed"></div>
 
 <script src="feed.js"></script>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
 </body>
 </html>
