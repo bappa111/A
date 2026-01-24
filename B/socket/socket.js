@@ -8,7 +8,6 @@ const User = require("../models/User");
   value = socket.id
 */
 const onlineUsers = new Map();
-
 let ioInstance = null;
 
 /* ======================
@@ -28,11 +27,16 @@ const initSocket = (server) => {
        USER ONLINE
     ====================== */
     if (userId) {
-      onlineUsers.set(userId.toString(), socket.id);
+      const uid = userId.toString();
+      onlineUsers.set(uid, socket.id);
 
-      await User.findByIdAndUpdate(userId, {
-        isOnline: true
-      });
+      try {
+        await User.findByIdAndUpdate(uid, {
+          isOnline: true
+        });
+      } catch (e) {
+        console.log("User online update error:", e.message);
+      }
 
       io.emit("online-users", [...onlineUsers.keys()]);
     }
@@ -41,19 +45,23 @@ const initSocket = (server) => {
        PRIVATE MESSAGE
     ====================== */
     socket.on("private-message", async ({ to, message }) => {
-      if (!userId || !to) return;
+      if (!userId || !to || !message) return;
 
-      const msg = await Message.create({
-        senderId: userId,
-        receiverId: to,
-        message,
-        delivered: true,
-        seen: false
-      });
+      try {
+        const msg = await Message.create({
+          senderId: userId,
+          receiverId: to,
+          message,
+          delivered: true,
+          seen: false
+        });
 
-      const targetSocket = onlineUsers.get(to.toString());
-      if (targetSocket) {
-        io.to(targetSocket).emit("private-message", msg);
+        const targetSocket = onlineUsers.get(to.toString());
+        if (targetSocket) {
+          io.to(targetSocket).emit("private-message", msg);
+        }
+      } catch (e) {
+        console.log("Private message error:", e.message);
       }
     });
 
@@ -73,16 +81,21 @@ const initSocket = (server) => {
        DISCONNECT
     ====================== */
     socket.on("disconnect", async () => {
-      if (userId) {
-        onlineUsers.delete(userId.toString());
+      if (!userId) return;
 
-        await User.findByIdAndUpdate(userId, {
+      const uid = userId.toString();
+      onlineUsers.delete(uid);
+
+      try {
+        await User.findByIdAndUpdate(uid, {
           isOnline: false,
           lastSeen: new Date()
         });
-
-        io.emit("online-users", [...onlineUsers.keys()]);
+      } catch (e) {
+        console.log("User offline update error:", e.message);
       }
+
+      io.emit("online-users", [...onlineUsers.keys()]);
     });
   });
 };

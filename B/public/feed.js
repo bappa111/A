@@ -6,7 +6,42 @@ let loading = false;
 let noMorePosts = false;
 
 /* ======================
-   HELPERS
+   URL HELPERS
+====================== */
+function getPostFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("post");
+}
+
+/* ======================
+   TIME HELPER
+====================== */
+function timeAgo(dateString) {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diff = Math.floor((now - past) / 1000);
+
+  if (diff < 60) return "Just now";
+
+  const mins = Math.floor(diff / 60);
+  if (mins < 60) return `${mins} min ago`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+
+  return past.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+/* ======================
+   AUTH HELPERS
 ====================== */
 function getMyId() {
   const t = localStorage.getItem("token");
@@ -19,7 +54,7 @@ function getMyId() {
 }
 
 /* ======================
-   RESET FEED (🔥 IMPORTANT)
+   RESET FEED
 ====================== */
 function resetFeed() {
   page = 1;
@@ -30,9 +65,9 @@ function resetFeed() {
 }
 
 /* ======================
-   SOCKET CONNECT (REALTIME)
+   SOCKET (REALTIME)
 ====================== */
-const socket = io("https://a-kisk.onrender.com", {
+const socket = io(API, {
   query: { userId: getMyId() }
 });
 
@@ -44,7 +79,7 @@ socket.on("notification", () => {
    FOLLOWED BY BADGE
 ====================== */
 function renderFollowedBy(p) {
-  if (!p.followedBy || p.followedBy.length === 0) return "";
+  if (!p.followedBy || !p.followedBy.length) return "";
 
   if (p.followedBy.length === 1) {
     return `<div style="margin-left:40px;font-size:12px;color:#666">
@@ -81,7 +116,10 @@ async function createPost() {
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
-    const res = await fetch(API + "/api/media/image", { method: "POST", body: fd });
+    const res = await fetch(API + "/api/media/image", {
+      method: "POST",
+      body: fd
+    });
     const data = await res.json();
     imageUrl = data.imageUrl || null;
   }
@@ -89,7 +127,10 @@ async function createPost() {
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
-    const res = await fetch(API + "/api/media/video", { method: "POST", body: fd });
+    const res = await fetch(API + "/api/media/video", {
+      method: "POST",
+      body: fd
+    });
     const data = await res.json();
     videoUrl = data.videoUrl || null;
   }
@@ -122,10 +163,9 @@ async function loadFeed() {
   if (loading || noMorePosts) return;
   loading = true;
 
-  const res = await fetch(
-    API + "/api/posts?page=" + page,
-    { headers: { Authorization: "Bearer " + token } }
-  );
+  const res = await fetch(API + "/api/posts?page=" + page, {
+    headers: { Authorization: "Bearer " + token }
+  });
 
   const posts = await res.json();
 
@@ -136,7 +176,7 @@ async function loadFeed() {
   }
 
   const feed = document.getElementById("feed");
-  const myId = getMyId();
+  const targetPostId = getPostFromURL();
 
   posts.forEach(p => {
     if (!p.userId) return;
@@ -158,6 +198,10 @@ async function loadFeed() {
 
       <p>${p.content || ""}</p>
 
+      <div style="font-size:12px;color:#888;margin-top:4px">
+        ${timeAgo(p.createdAt)}
+      </div>
+
       ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
       ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
 
@@ -168,6 +212,15 @@ async function loadFeed() {
       </div>
     `;
 
+    if (targetPostId && p._id === targetPostId) {
+      div.style.border = "2px solid red";
+      div.style.background = "#fff6f6";
+      setTimeout(() => {
+        div.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+      history.replaceState({}, "", "/feed.html");
+    }
+
     feed.appendChild(div);
   });
 
@@ -176,7 +229,7 @@ async function loadFeed() {
 }
 
 /* ======================
-   PROFILE / AUTH
+   PROFILE MENU
 ====================== */
 async function loadMyProfilePic() {
   const myId = getMyId();
@@ -192,6 +245,18 @@ async function loadMyProfilePic() {
   }
 }
 
+document.addEventListener("click", e => {
+  const btn = document.getElementById("profileMenuBtn");
+  const drop = document.getElementById("profileDropdown");
+  if (!btn || !drop) return;
+
+  if (btn.contains(e.target)) {
+    drop.style.display = drop.style.display === "block" ? "none" : "block";
+  } else if (!drop.contains(e.target)) {
+    drop.style.display = "none";
+  }
+});
+
 function goMyProfile() {
   location.href = "profile.html";
 }
@@ -202,63 +267,24 @@ function logout() {
 }
 
 /* ======================
-   LIKE / COMMENT / DELETE
+   LIKE
 ====================== */
 async function toggleLike(postId) {
   await fetch(API + "/api/posts/" + postId + "/like", {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-
   resetFeed();
   loadFeed();
-}
-
-async function addComment(postId) {
-  const input = document.getElementById("c-" + postId);
-  const text = input.value.trim();
-  if (!text) return;
-
-  await fetch(API + "/api/posts/" + postId + "/comment", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({ text })
-  });
-
-  input.value = "";
-  resetFeed();
-  loadFeed();
-}
-
-async function deletePost(postId) {
-  await fetch(API + "/api/posts/" + postId, {
-    method: "DELETE",
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  resetFeed();
-  loadFeed();
-}
-
-function goProfile(userId) {
-  if (!userId) return;
-  location.href = "profile.html?id=" + userId;
 }
 
 /* ======================
    NOTIFICATION BADGE
 ====================== */
 async function loadNotificationCount() {
-  const t = localStorage.getItem("token");
-  if (!t) return;
-
   const res = await fetch(API + "/api/notifications/count", {
-    headers: { Authorization: "Bearer " + t }
+    headers: { Authorization: "Bearer " + token }
   });
-
   const data = await res.json();
   const badge = document.getElementById("notifCount");
   if (badge) badge.innerText = data.count || 0;
@@ -278,8 +304,5 @@ loadFeed();
 window.addEventListener("scroll", () => {
   const nearBottom =
     window.innerHeight + window.scrollY >= document.body.offsetHeight - 200;
-
-  if (nearBottom) {
-    loadFeed();
-  }
+  if (nearBottom) loadFeed();
 });

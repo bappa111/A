@@ -72,6 +72,9 @@ async function loadNotifications() {
     div.innerHTML = `
       <b>${n.fromUser?.name || "System"}</b>
       <p>${n.text}</p>
+      <div style="font-size:12px;color:#888">
+        ${timeAgo(n.createdAt)}
+      </div>
       ${actions}
     `;
 
