@@ -73,6 +73,9 @@ const socket = io(API, {
 
 socket.on("notification", () => {
   loadNotificationCount();
+  if (typeof loadNotifications === "function") {
+    loadNotifications();
+  }
 });
 
 /* ======================
@@ -116,10 +119,7 @@ async function createPost() {
   if (imageFile) {
     const fd = new FormData();
     fd.append("image", imageFile);
-    const res = await fetch(API + "/api/media/image", {
-      method: "POST",
-      body: fd
-    });
+    const res = await fetch(API + "/api/media/image", { method: "POST", body: fd });
     const data = await res.json();
     imageUrl = data.imageUrl || null;
   }
@@ -127,10 +127,7 @@ async function createPost() {
   if (videoFile) {
     const fd = new FormData();
     fd.append("video", videoFile);
-    const res = await fetch(API + "/api/media/video", {
-      method: "POST",
-      body: fd
-    });
+    const res = await fetch(API + "/api/media/video", { method: "POST", body: fd });
     const data = await res.json();
     videoUrl = data.videoUrl || null;
   }
@@ -192,9 +189,18 @@ async function loadFeed() {
   });
 
   const posts = await res.json();
+
   if (!posts.length) {
-    noMorePosts = true;
     loading = false;
+
+    if (page === 1) {
+      console.log("Retrying feed load...");
+      page = 1;
+      noMorePosts = false;
+      setTimeout(loadFeed, 800);
+    } else {
+      noMorePosts = true;
+    }
     return;
   }
 
