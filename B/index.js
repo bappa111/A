@@ -25,6 +25,8 @@ app.use(express.json());
 ====================== */
 app.use(express.static(path.join(__dirname, "public")));
 
+// 🔥🔥 THIS LINE WAS MISSING (IMAGE / PROFILE / NOTIFICATION FIX)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ======================
    MEDIA ROUTES (IMAGE / FUTURE AUDIO)

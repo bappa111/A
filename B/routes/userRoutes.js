@@ -54,33 +54,45 @@ router.get("/follow-requests", auth, async (req, res) => {
    GET USER PROFILE (PRIVATE SAFE)
 ====================== */
 router.get("/profile/:id", auth, async (req, res) => {
-  const user = await User.findById(req.params.id).select(
-    "name email profilePic bio followers following isPrivate followRequests"
-  );
+  try {
+    const user = await User.findById(req.params.id).select(
+      "name email profilePic bio followers following isPrivate followRequests"
+    );
 
-  if (!user) {
-    return res.status(404).json({ msg: "User not found" });
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    const isOwner = req.user.id === req.params.id;
+    const isFollower = user.followers.some(
+      id => id.toString() === req.user.id
+    );
+
+    let posts = [];
+    if (!user.isPrivate || isOwner || isFollower) {
+      posts = await Post.find({ userId: req.params.id })
+        .sort({ createdAt: -1 });
+    }
+
+    // 🔥🔥 PROFILE PIC FIX (SAFE)
+    let profilePic = user.profilePic;
+    if (profilePic && !profilePic.startsWith("http")) {
+      profilePic = `${req.protocol}://${req.get("host")}${profilePic}`;
+    }
+
+    res.json({
+      user: {
+        ...user.toObject(),
+        profilePic, // ✅ FIXED HERE
+        followersCount: user.followers.length,
+        followingCount: user.following.length
+      },
+      posts
+    });
+  } catch (err) {
+    console.error("Profile load error:", err);
+    res.status(500).json({ msg: "Profile load failed" });
   }
-
-  const isOwner = req.user.id === req.params.id;
-  const isFollower = user.followers.some(
-    id => id.toString() === req.user.id
-  );
-
-  let posts = [];
-  if (!user.isPrivate || isOwner || isFollower) {
-    posts = await Post.find({ userId: req.params.id })
-      .sort({ createdAt: -1 });
-  }
-
-  res.json({
-    user: {
-      ...user.toObject(),
-      followersCount: user.followers.length,
-      followingCount: user.following.length
-    },
-    posts
-  });
 });
 
 /* ======================
