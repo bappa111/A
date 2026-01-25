@@ -59,60 +59,26 @@ function resetFeed() {
 }
 
 /* ======================
-   SOCKET (REALTIME)
+   SOCKET
 ====================== */
-const socket = io(API, {
-  query: { userId: getMyId() }
-});
+const socket = io(API, { query: { userId: getMyId() } });
 
 socket.on("notification", () => {
   loadNotificationCount();
-  if (typeof loadNotifications === "function") {
-    loadNotifications();
-  }
+  if (typeof loadNotifications === "function") loadNotifications();
 });
 
 /* ======================
-   FOLLOWED BY
-====================== */
-function renderFollowedBy(p) {
-  if (!Array.isArray(p.followedBy)) return "";
-  const clean = p.followedBy.filter(Boolean);
-  if (!clean.length) return "";
-
-  if (clean.length === 1) {
-    return `<div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${clean[0]}
-    </div>`;
-  }
-
-  if (clean.length === 2) {
-    return `<div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${clean[0]}, ${clean[1]}
-    </div>`;
-  }
-
-  return `<div style="margin-left:40px;font-size:12px;color:#666">
-    Followed by ${clean[0]} and ${clean.length - 1} others
-  </div>`;
-}
-
-/* ======================
-   CREATE POST  ✅ FIXED
+   CREATE POST
 ====================== */
 async function createPost() {
-  const postTextEl = document.getElementById("postText");
-  const postImageEl = document.getElementById("postImage");
-  const postVideoEl = document.getElementById("postVideo");
+  const postText = document.getElementById("postText");
+  const postImage = document.getElementById("postImage");
+  const postVideo = document.getElementById("postVideo");
 
-  if (!postTextEl || !postImageEl || !postVideoEl) {
-    alert("Post input missing");
-    return;
-  }
-
-  const text = postTextEl.value.trim();
-  const img = postImageEl.files[0];
-  const vid = postVideoEl.files[0];
+  const text = postText.value.trim();
+  const img = postImage.files[0];
+  const vid = postVideo.files[0];
 
   if (!text && !img && !vid) {
     alert("Write something or select image/video");
@@ -126,29 +92,23 @@ async function createPost() {
     if (img) {
       const fd = new FormData();
       fd.append("image", img);
-
-      const res = await fetch(API + "/api/media/image", {
+      const r = await fetch(API + "/api/media/image", {
         method: "POST",
         headers: { Authorization: "Bearer " + token },
         body: fd
       });
-
-      const data = await res.json();
-      image = data.imageUrl || null;
+      image = (await r.json()).imageUrl || null;
     }
 
     if (vid) {
       const fd = new FormData();
       fd.append("video", vid);
-
-      const res = await fetch(API + "/api/media/video", {
+      const r = await fetch(API + "/api/media/video", {
         method: "POST",
         headers: { Authorization: "Bearer " + token },
         body: fd
       });
-
-      const data = await res.json();
-      video = data.videoUrl || null;
+      video = (await r.json()).videoUrl || null;
     }
 
     await fetch(API + "/api/posts", {
@@ -157,20 +117,15 @@ async function createPost() {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token
       },
-      body: JSON.stringify({
-        content: text,
-        image,
-        video
-      })
+      body: JSON.stringify({ content: text, image, video })
     });
 
-    postTextEl.value = "";
-    postImageEl.value = "";
-    postVideoEl.value = "";
+    postText.value = "";
+    postImage.value = "";
+    postVideo.value = "";
 
     resetFeed();
     loadFeed();
-
   } catch (e) {
     alert("Post failed");
     console.error(e);
@@ -178,7 +133,7 @@ async function createPost() {
 }
 
 /* ======================
-   LOAD FEED (PAGINATION FIXED)
+   LOAD FEED
 ====================== */
 async function loadFeed() {
   if (loading || noMorePosts) return;
@@ -202,89 +157,88 @@ async function loadFeed() {
   }
 
   const feed = document.getElementById("feed");
-  const target = getPostFromURL();
 
   posts.forEach(p => {
-  if (!p.userId) return;
+    if (!p.userId) return;
 
-  const div = document.createElement("div");
-  div.style.border = "1px solid #ccc";
-  div.style.padding = "8px";
-  div.style.marginBottom = "12px";
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "8px";
+    div.style.marginBottom = "12px";
 
-  div.innerHTML = `
-    <!-- USER HEADER -->
-    <div style="display:flex;gap:8px;align-items:center;cursor:pointer"
-         onclick="goProfile('${p.userId._id}')">
+    div.innerHTML = `
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <div style="display:flex;gap:8px;align-items:center;cursor:pointer"
+       onclick="goProfile('${p.userId._id}')">
+    <img src="${p.userId.profilePic || 'https://via.placeholder.com/40'}"
+         style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+    <b>${p.userId.name}</b>
+  </div>
 
-      <img src="${p.userId.profilePic && p.userId.profilePic.trim() !== ""
-        ? p.userId.profilePic
-        : 'https://via.placeholder.com/40'}"
-           style="width:32px;height:32px;border-radius:50%;object-fit:cover">
-
-      <b>${p.userId.name}</b>
-    </div>
-
-    ${
-    p.followedBy && p.followedBy.filter(Boolean).length
-      ? `<div style="margin-left:40px;font-size:12px;color:#666">
-           Followed by ${p.followedBy.filter(Boolean).join(", ")}
-         </div>`
-      : ""
-    }
-
-    <p style="margin:6px 0">${p.content || ""}</p>
-
-    <div style="font-size:12px;color:#888">
-      ${timeAgo(p.createdAt)}
-    </div>
-
-    ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-
-    ${p.video ? `
-      <video controls style="max-width:100%;margin-top:6px">
-        <source src="${p.video}">
-      </video>` : ""}
-
-    <div style="margin-top:6px">
-      <button onclick="toggleLike('${p._id}')">
-        👍 Like (${p.likes?.length || 0})
-      </button>
-    </div>
-
-    ${(p.comments || []).map(c => `
-      <div style="margin-left:10px;margin-top:4px">
-        💬 ${c.text}
-        <div style="font-size:11px;color:#888">
-          ${timeAgo(c.createdAt)}
+  ${
+    p.userId._id === getMyId()
+      ? `
+      <div style="position:relative">
+        <button onclick="togglePostMenu('${p._id}')"
+          style="background:none;border:none;font-size:18px;cursor:pointer">⋮</button>
+        <div id="menu-${p._id}"
+             style="display:none;position:absolute;right:0;
+                    background:#fff;border:1px solid #ccc;
+                    box-shadow:0 2px 6px rgba(0,0,0,.2);z-index:10">
+          <div onclick="editPost('${p._id}')" style="padding:6px">✏️ Edit</div>
+          <div onclick="deletePost('${p._id}')" style="padding:6px;color:red">🗑 Delete</div>
+          <div onclick="pinPost('${p._id}')" style="padding:6px">📌 Pin</div>
         </div>
-      </div>
-    `).join("")}
+      </div>`
+      : ""
+  }
+</div>
 
-    <input id="c-${p._id}" placeholder="Write comment..." style="width:70%">
-    <button onclick="addComment('${p._id}')">Send</button>
+${p.followedBy?.length ? `
+<div style="margin-left:40px;font-size:12px;color:#666">
+  Followed by ${p.followedBy.filter(Boolean).join(", ")}
+</div>` : ""}
 
-    ${
-      p.userId._id === getMyId()
-        ? `<button style="color:red;margin-left:10px"
-                   onclick="deletePost('${p._id}')">Delete</button>`
-        : ""
-    }
-  `;
+<p>${p.content || ""}</p>
+<div style="font-size:12px;color:#888">${timeAgo(p.createdAt)}</div>
 
-  feed.appendChild(div);
-});
+${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
+${p.video ? `<video controls style="max-width:100%;margin-top:6px"><source src="${p.video}"></video>` : ""}
+
+<button onclick="toggleLike('${p._id}')">👍 Like (${p.likes?.length || 0})</button>
+
+${(p.comments || []).map(c => `
+  <div style="margin-left:10px">
+    💬 ${c.text}
+    <div style="font-size:11px;color:#888">${timeAgo(c.createdAt)}</div>
+  </div>`).join("")}
+
+<input id="c-${p._id}" placeholder="Write comment..." style="width:70%">
+<button onclick="addComment('${p._id}')">Send</button>
+`;
+
+    feed.appendChild(div);
+  });
 
   page++;
   loading = false;
 }
 
 /* ======================
-   COMMENT
+   POST MENU
+====================== */
+function togglePostMenu(id) {
+  document.querySelectorAll("[id^='menu-']").forEach(m => m.style.display = "none");
+  const menu = document.getElementById("menu-" + id);
+  if (menu) menu.style.display = "block";
+}
+
+/* ======================
+   COMMENT / LIKE
 ====================== */
 async function addComment(id) {
   const input = document.getElementById("c-" + id);
-  if (!input || !input.value.trim()) return;
+  if (!input.value.trim()) return;
 
   await fetch(`${API}/api/posts/${id}/comment`, {
     method: "POST",
@@ -299,9 +253,6 @@ async function addComment(id) {
   loadFeed();
 }
 
-/* ======================
-   LIKE
-====================== */
 async function toggleLike(id) {
   await fetch(`${API}/api/posts/${id}/like`, {
     method: "POST",
@@ -312,69 +263,23 @@ async function toggleLike(id) {
 }
 
 /* ======================
-   PROFILE MENU
+   EDIT / DELETE / PIN
 ====================== */
-document.addEventListener("click", e => {
-  const btn = document.getElementById("profileMenuBtn");
-  const drop = document.getElementById("profileDropdown");
-  if (!btn || !drop) return;
+async function editPost(id) {
+  const text = prompt("Edit your post:");
+  if (!text || !text.trim()) return;
 
-  if (btn.contains(e.target)) {
-    drop.style.display = drop.style.display === "block" ? "none" : "block";
-  } else if (!drop.contains(e.target)) {
-    drop.style.display = "none";
-  }
-});
-
-function goProfile(userId) {
-  if (!userId) return;
-  location.href = "profile.html?id=" + userId;
-}
-
-function goMyProfile() {
-  location.href = "profile.html";
-}
-
-function logout() {
-  localStorage.clear();
-  location.href = "index.html";
-}
-
-/* ======================
-   NOTIFICATION BADGE
-====================== */
-async function loadNotificationCount() {
-  const res = await fetch(`${API}/api/notifications/count`, {
-    headers: { Authorization: "Bearer " + token }
+  await fetch(`${API}/api/posts/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ content: text })
   });
-  const data = await res.json();
-  const badge = document.getElementById("notifCount");
-  if (badge) badge.innerText = data.count || 0;
-}
 
-/*togglemenu pic*/
-async function loadMyProfilePic() {
-  const myId = getMyId();
-  if (!myId || !token) return;
-
-  try {
-    const res = await fetch(API + "/api/users/profile/" + myId, {
-      headers: { Authorization: "Bearer " + token }
-    });
-
-    const data = await res.json();
-
-    const img = document.getElementById("profileMenuBtn");
-    if (!img) return;
-
-    if (data.user && data.user.profilePic) {
-      img.src = data.user.profilePic;
-    } else {
-      img.src = "https://via.placeholder.com/40";
-    }
-  } catch (e) {
-    console.error("Profile pic load failed", e);
-  }
+  resetFeed();
+  loadFeed();
 }
 
 async function deletePost(id) {
@@ -389,21 +294,54 @@ async function deletePost(id) {
   loadFeed();
 }
 
+function pinPost() {
+  alert("Pin feature coming soon 😉");
+}
+
+/* ======================
+   PROFILE + NOTIF
+====================== */
+function goProfile(id) {
+  location.href = "profile.html?id=" + id;
+}
+
+async function loadNotificationCount() {
+  const r = await fetch(`${API}/api/notifications/count`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const d = await r.json();
+  const b = document.getElementById("notifCount");
+  if (b) b.innerText = d.count || 0;
+}
+
+async function loadMyProfilePic() {
+  const r = await fetch(API + "/api/users/profile/" + getMyId(), {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const d = await r.json();
+  const img = document.getElementById("profileMenuBtn");
+  if (img) img.src = d.user?.profilePic || "https://via.placeholder.com/40";
+}
+
 /* ======================
    INIT
 ====================== */
 document.addEventListener("DOMContentLoaded", () => {
-  loadMyProfilePic();        // ✅ ADD THIS
+  loadMyProfilePic();
   resetFeed();
   loadFeed();
   loadNotificationCount();
 });
 
 /* ======================
-   INFINITE SCROLL
+   SCROLL + MENU CLOSE
 ====================== */
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200)
     loadFeed();
-  }
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.closest("button"))
+    document.querySelectorAll("[id^='menu-']").forEach(m => m.style.display = "none");
 });

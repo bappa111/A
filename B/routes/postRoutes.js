@@ -153,7 +153,26 @@ router.post("/:id/comment", auth, async (req, res) => {
     res.status(500).json({ msg: "Comment failed" });
   }
 });
+/* ======================
+   EDIT POST
+====================== */
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ msg: "Post not found" });
 
+    if (post.userId.toString() !== req.user.id) {
+      return res.status(403).json({ msg: "Not allowed" });
+    }
+
+    post.content = req.body.content || post.content;
+    await post.save();
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ msg: "Edit failed" });
+  }
+});
 /* ======================
    DELETE POST
 ====================== */
