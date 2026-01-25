@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h2>Token Check</h2>
+
+<pre id="out">Checking...</pre>
+
+<script>
+  const t = localStorage.getItem("token");
+  document.getElementById("out").innerText =
+    t ? "TOKEN FOUND:\n\n" + t : "❌ TOKEN NOT FOUND";
+</script>
+</body>
+</html>
