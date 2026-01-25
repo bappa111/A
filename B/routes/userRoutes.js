@@ -51,6 +51,27 @@ router.get("/follow-requests", auth, async (req, res) => {
 });
 
 /* ======================
+   SEARCH USERS
+====================== */
+router.get("/search", auth, async (req, res) => {
+  try {
+    const q = req.query.q?.trim();
+    if (!q) return res.json([]);
+
+    const users = await User.find({
+      name: { $regex: q, $options: "i" },
+      _id: { $ne: req.user.id }
+    })
+    .select("name profilePic")
+    .limit(10);
+
+    res.json(users);
+  } catch (e) {
+    res.status(500).json([]);
+  }
+});
+
+/* ======================
    GET USER PROFILE (PRIVATE SAFE)
 ====================== */
 router.get("/profile/:id", auth, async (req, res) => {

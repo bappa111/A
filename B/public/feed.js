@@ -368,6 +368,64 @@ document.addEventListener("DOMContentLoaded", () => {
   loadNotificationCount();
 });
 
+/*search user*/
+const searchInput = document.getElementById("userSearch");
+const resultBox = document.getElementById("searchResults");
+
+if (searchInput) {
+  searchInput.addEventListener("input", async () => {
+    const q = searchInput.value.trim();
+    if (!q) {
+      resultBox.style.display = "none";
+      resultBox.innerHTML = "";
+      return;
+    }
+
+    const res = await fetch(`${API}/api/users/search?q=${encodeURIComponent(q)}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const users = await res.json();
+    resultBox.innerHTML = "";
+
+    if (!users.length) {
+      resultBox.style.display = "block";
+      resultBox.innerHTML = `<div style="padding:8px;color:#666">No users found</div>`;
+      return;
+    }
+
+    users.forEach(u => {
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "8px";
+      div.style.padding = "8px";
+      div.style.cursor = "pointer";
+
+      div.innerHTML = `
+        <img src="${u.profilePic || 'https://via.placeholder.com/40'}"
+             style="width:32px;height:32px;border-radius:50%">
+        <b>${u.name}</b>
+      `;
+
+      div.onclick = () => {
+        location.href = "profile.html?id=" + u._id;
+      };
+
+      resultBox.appendChild(div);
+    });
+
+    resultBox.style.display = "block";
+  });
+}
+
+/* close on outside click */
+document.addEventListener("click", e => {
+  if (!e.target.closest("#userSearch")) {
+    if (resultBox) resultBox.style.display = "none";
+  }
+});
+
 /* ======================
    SCROLL + MENU CLOSE
 ====================== */
