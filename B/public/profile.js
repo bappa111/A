@@ -90,7 +90,8 @@ async function loadProfile() {
   if (isOwner) {
     saveBtn.style.display = "inline-block";
     picInput.style.display = "inline-block";
-  } 
+  }
+document.getElementById("personalPostBox").style.display = "block"; 
   /* VISITOR UI */
   else {
     followBtn.style.display = "inline-block";
@@ -238,6 +239,28 @@ async function loadPersonalPosts({ profileUserId, isOwner, isFollower, isPrivate
     console.error("Personal post load failed", e);
     container.innerHTML = "<p>Error loading personal posts</p>";
   }
+}
+
+/* ======================
+   CREATE PERSONAL POST
+====================== */
+async function createPersonalPost() {
+  const input = document.getElementById("personalPostText");
+  if (!input || !input.value.trim()) return;
+
+  await fetch(API + "/api/personal-posts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      content: input.value.trim()
+    })
+  });
+
+  input.value = "";
+  loadProfile(); // reload profile + personal posts
 }
 
 /* ======================

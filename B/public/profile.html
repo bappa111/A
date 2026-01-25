@@ -39,6 +39,14 @@ Following: <span id="followingCount" onclick="openFollowing()" style="cursor:poi
 </div>
 
 <hr>
+<!-- PERSONAL POST CREATE (OWNER ONLY) -->
+<div id="personalPostBox" style="display:none;margin-bottom:10px">
+  <textarea id="personalPostText"
+    placeholder="Write a personal post..."
+    style="width:100%;height:80px"></textarea>
+
+  <button onclick="createPersonalPost()">Post (Private)</button>
+</div>
 
 <hr>
 <h4>🔐 Personal Posts</h4>

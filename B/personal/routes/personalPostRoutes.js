@@ -32,6 +32,15 @@ router.get("/:ownerId", auth, async (req, res) => {
   res.json(posts);
 });
 
+router.post("/", auth, async (req, res) => {
+  const post = await PersonalPost.create({
+    userId: req.user.id,
+    content: req.body.content
+  });
+
+  res.json(post);
+});
+
 /* DELETE PERSONAL POST (OWNER ONLY) */
 router.delete("/:id", auth, async (req, res) => {
   const post = await PersonalPost.findById(req.params.id);
