@@ -180,6 +180,8 @@ async function loadFeed() {
 
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
+    div.style.width = "100%";
+    div.style.boxSizing = "border-box";
     div.style.padding = "8px";
     div.style.marginBottom = "12px";
 
@@ -219,8 +221,20 @@ ${p.followedBy?.length ? `
 <p>${p.content || ""}</p>
 <div style="font-size:12px;color:#888">${timeAgo(p.createdAt)}</div>
 
-${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-${p.video ? `<video controls style="max-width:100%;margin-top:6px"><source src="${p.video}"></video>` : ""}
+${p.image ? `
+  <div style="width:100%;margin-top:6px">
+    <img src="${p.image}"
+         style="width:100%;height:auto;display:block;border-radius:6px">
+  </div>
+` : ""}
+${p.video ? `
+  <div style="width:100%;margin-top:6px">
+    <video controls
+           style="width:100%;height:auto;display:block;border-radius:6px">
+      <source src="${p.video}">
+    </video>
+  </div>
+` : ""}
 
 <button onclick="toggleLike('${p._id}')">👍 Like (${p.likes?.length || 0})</button>
 
