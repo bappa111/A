@@ -16,6 +16,9 @@ const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
 const profileUserId = params.get("id") || myId;
 
+/* ======================
+   CHECK PERSONAL ACCESS STATUS
+====================== */
 async function checkPersonalAccessStatus() {
   const btn = document.getElementById("requestAccessBtn");
   if (!btn) return;
@@ -24,7 +27,6 @@ async function checkPersonalAccessStatus() {
     API + "/api/personal-access/status/" + profileUserId,
     { headers: { Authorization: "Bearer " + token } }
   );
-
   const data = await res.json();
 
   if (data.status === "pending") {
@@ -43,7 +45,7 @@ async function checkPersonalAccessStatus() {
 }
 
 /* ======================
-   PROFILE HEADER NAME
+   PROFILE HEADER
 ====================== */
 async function loadMyProfileHeader() {
   if (!token) return;
@@ -51,13 +53,10 @@ async function loadMyProfileHeader() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-
   const data = await res.json();
-  const title = document.getElementById("profileTitle");
 
-  if (title && data.user?.name) {
-    title.innerText = data.user.name;
-  }
+  const title = document.getElementById("profileTitle");
+  if (title && data.user?.name) title.innerText = data.user.name;
 }
 
 /* ======================
@@ -75,7 +74,6 @@ async function loadProfile() {
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
 
-  // ELEMENTS
   const img = document.getElementById("profilePic");
   const bio = document.getElementById("bio");
   const postsSection = document.getElementById("postsSection");
@@ -102,22 +100,22 @@ async function loadProfile() {
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   bio.value = data.user.bio || "";
   bio.disabled = !isOwner;
-
   followersCount.innerText = data.user.followersCount || 0;
   followingCount.innerText = data.user.followingCount || 0;
 
   /* PRIVATE PROFILE LOCK */
   if (isPrivate && !isOwner && !isFollower) {
-  postsSection.style.display = "none";
+    postsSection.style.display = "none";
+    followBtn.style.display = "inline-block";
+    followBtn.innerText = "Follow";
 
-  followBtn.style.display = "inline-block";
-followBtn.innerText = "Follow"; // ✅ ADD THIS
-  requestBtn.style.display = "inline-block";
-  requestBtn.onclick = requestPersonalAccess;
+    requestBtn.style.display = "inline-block";
+    requestBtn.onclick = requestPersonalAccess;
 
-  await checkPersonalAccessStatus();
-  return;
-}
+    await checkPersonalAccessStatus();
+    await loadPersonalPosts({ isOwner });
+    return;
+  }
 
   /* OWNER UI */
   if (isOwner) {
@@ -140,64 +138,71 @@ followBtn.innerText = "Follow"; // ✅ ADD THIS
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
     div.style.marginBottom = "10px";
-
     div.innerHTML = `
       <p>${p.content || ""}</p>
-      ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-      ${p.video ? `<video controls style="max-width:100%;margin-top:6px"><source src="${p.video}"></video>` : ""}
+      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
     `;
     posts.appendChild(div);
   });
 
-  await loadPersonalPosts({ isOwner, isFollower, isPrivate });
+  await loadPersonalPosts({ isOwner });
 }
 
 /* ======================
-   PERSONAL POSTS
+   PERSONAL POSTS (FINAL LOGIC)
 ====================== */
-async function loadPersonalPosts({ isOwner, isFollower, isPrivate }) {
+async function loadPersonalPosts({ isOwner }) {
   const container = document.getElementById("personalPosts");
   if (!container) return;
 
-  if (!isOwner && isPrivate && !isFollower) {
-    container.innerHTML = "<p style='color:#888'>🔒 Personal posts are private</p>";
+  let hasPersonalAccess = false;
+
+  if (!isOwner) {
+    const res = await fetch(
+      API + "/api/personal-access/status/" + profileUserId,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    const data = await res.json();
+    hasPersonalAccess = data.status === "approved";
+  }
+
+  if (!isOwner && !hasPersonalAccess) {
+    container.innerHTML = `
+      <p style="color:#888">🔒 Personal posts are private</p>
+      <button onclick="requestPersonalAccess()">Request Access</button>
+    `;
     return;
   }
 
-  try {
-    const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
-      headers: { Authorization: "Bearer " + token }
-    });
+  const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const list = await res.json();
 
-    const list = await res.json();
-    container.innerHTML = "";
-
-    if (!list.length) {
-      container.innerHTML = "<p style='color:#888'>No personal posts</p>";
-      return;
-    }
-
-    list.forEach(p => {
-      const div = document.createElement("div");
-      div.style.border = "1px dashed #aaa";
-      div.style.padding = "8px";
-      div.style.marginBottom = "8px";
-
-      div.innerHTML = `
-        <p>${p.content}</p>
-        <div style="font-size:12px;color:#666">
-          ${new Date(p.createdAt).toLocaleString()}
-        </div>
-      `;
-      container.appendChild(div);
-    });
-  } catch (e) {
-    container.innerHTML = "<p>Error loading personal posts</p>";
+  container.innerHTML = "";
+  if (!list.length) {
+    container.innerHTML = "<p style='color:#888'>No personal posts</p>";
+    return;
   }
+
+  list.forEach(p => {
+    const div = document.createElement("div");
+    div.style.border = "1px dashed #aaa";
+    div.style.padding = "8px";
+    div.style.marginBottom = "8px";
+    div.innerHTML = `
+      <p>${p.content}</p>
+      <div style="font-size:12px;color:#666">
+        ${new Date(p.createdAt).toLocaleString()}
+      </div>
+    `;
+    container.appendChild(div);
+  });
 }
 
 /* ======================
-   LOAD PERSONAL ACCESS REQUESTS (OWNER ONLY)
+   PERSONAL ACCESS (OWNER)
 ====================== */
 async function loadPersonalAccessRequests() {
   if (profileUserId !== myId) return;
@@ -209,39 +214,26 @@ async function loadPersonalAccessRequests() {
   box.style.display = "block";
   list.innerHTML = "Loading...";
 
-  try {
-    const res = await fetch(API + "/api/personal-access/requests", {
-      headers: { Authorization: "Bearer " + token }
-    });
+  const res = await fetch(API + "/api/personal-access/requests", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const requests = await res.json();
 
-    const requests = await res.json();
-    list.innerHTML = "";
-
-    if (!Array.isArray(requests) || !requests.length) {
-      list.innerHTML = "<p style='color:#666'>No pending requests</p>";
-      return;
-    }
-
-    requests.forEach(r => {
-      const div = document.createElement("div");
-      div.style.border = "1px solid #ccc";
-      div.style.padding = "8px";
-      div.style.marginBottom = "6px";
-
-      div.innerHTML = `
-        <b>${r.requester.name}</b>
-        <div style="margin-top:6px">
-          <button onclick="approveAccess('${r._id}')">Approve</button>
-          <button onclick="rejectAccess('${r._id}')">Reject</button>
-        </div>
-      `;
-
-      list.appendChild(div);
-    });
-  } catch (e) {
-    console.error(e);
-    list.innerHTML = "<p>Error loading requests</p>";
+  list.innerHTML = "";
+  if (!requests.length) {
+    list.innerHTML = "<p>No pending requests</p>";
+    return;
   }
+
+  requests.forEach(r => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <b>${r.requester.name}</b><br>
+      <button onclick="approveAccess('${r._id}')">Approve</button>
+      <button onclick="rejectAccess('${r._id}')">Reject</button>
+    `;
+    list.appendChild(div);
+  });
 }
 
 async function approveAccess(id) {
@@ -249,14 +241,8 @@ async function approveAccess(id) {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-
   loadPersonalAccessRequests();
-  loadPersonalPosts({
-    profileUserId,
-    isOwner: true,
-    isFollower: true,
-    isPrivate: false
-  });
+  loadProfile();
 }
 
 async function rejectAccess(id) {
@@ -264,7 +250,6 @@ async function rejectAccess(id) {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-
   loadPersonalAccessRequests();
 }
 
@@ -332,12 +317,10 @@ function openDM() {
 
 async function requestPersonalAccess() {
   const btn = document.getElementById("requestAccessBtn");
-
   await fetch(API + "/api/personal-access/request/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-
   btn.innerText = "⏳ Request Pending";
   btn.disabled = true;
 }
