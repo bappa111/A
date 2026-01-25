@@ -17,7 +17,7 @@ const myId = getMyId();
 const profileUserId = params.get("id") || myId;
 
 /* ======================
-   🔥 PROFILE HEADER NAME (NEW)
+   PROFILE HEADER NAME
 ====================== */
 async function loadMyProfileHeader() {
   if (!token) return;
@@ -35,7 +35,7 @@ async function loadMyProfileHeader() {
 }
 
 /* ======================
-   LOAD PROFILE
+   LOAD PROFILE (MASTER)
 ====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
@@ -60,29 +60,34 @@ async function loadProfile() {
   const picInput = document.getElementById("profilePicInput");
   const followersCount = document.getElementById("followersCount");
   const followingCount = document.getElementById("followingCount");
+  const personalBox = document.getElementById("personalPostBox");
+  const requestBtn = document.getElementById("requestAccessBtn");
 
   /* RESET UI */
   saveBtn.style.display = "none";
   picInput.style.display = "none";
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
+  personalBox.style.display = "none";
+  requestBtn.style.display = "none";
   postsSection.style.display = "block";
 
   /* BASIC INFO */
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
-  img.style.display = "block";
-
   bio.value = data.user.bio || "";
   bio.disabled = !isOwner;
 
   followersCount.innerText = data.user.followersCount || 0;
   followingCount.innerText = data.user.followingCount || 0;
 
-  /* PRIVATE PROFILE */
+  /* PRIVATE PROFILE LOCK */
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
+
+    requestBtn.style.display = "inline-block";
+    await loadPersonalPosts({ isOwner, isFollower, isPrivate });
     return;
   }
 
@@ -90,18 +95,17 @@ async function loadProfile() {
   if (isOwner) {
     saveBtn.style.display = "inline-block";
     picInput.style.display = "inline-block";
-  }
-document.getElementById("personalPostBox").style.display = "block"; 
-  /* VISITOR UI */
-  else {
-    followBtn.style.display = "inline-block";
-    followBtn.innerText = isFollower ? "Unfollow" : "Follow";
-    if (!isPrivate || isFollower) {
-      chatBtn.style.display = "inline-block";
-    }
+    personalBox.style.display = "block";
   }
 
-  /* POSTS */
+  /* VISITOR UI */
+  if (!isOwner) {
+    followBtn.style.display = "inline-block";
+    followBtn.innerText = isFollower ? "Unfollow" : "Follow";
+    if (!isPrivate || isFollower) chatBtn.style.display = "inline-block";
+  }
+
+  /* PUBLIC POSTS */
   posts.innerHTML = "";
   data.posts.forEach(p => {
     const div = document.createElement("div");
@@ -112,109 +116,35 @@ document.getElementById("personalPostBox").style.display = "block";
     div.innerHTML = `
       <p>${p.content || ""}</p>
       ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-      ${p.video ? `
-        <video controls style="max-width:100%;margin-top:6px">
-          <source src="${p.video}">
-        </video>` : ""}
+      ${p.video ? `<video controls style="max-width:100%;margin-top:6px"><source src="${p.video}"></video>` : ""}
     `;
-
     posts.appendChild(div);
   });
-}
 
-await loadPersonalPosts({
-    profileUserId,
-    isOwner,
-    isFollower,
-    isPrivate
-  });
-
-/* ======================
-   FOLLOW / UNFOLLOW
-====================== */
-async function toggleFollow() {
-  const res = await fetch(API + "/api/users/follow/" + profileUserId, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  const data = await res.json();
-
-  document.getElementById("followersCount").innerText =
-    data.followersCount ?? document.getElementById("followersCount").innerText;
-
-  document.getElementById("followingCount").innerText =
-    data.followingCount ?? document.getElementById("followingCount").innerText;
-
-  loadProfile();
+  await loadPersonalPosts({ isOwner, isFollower, isPrivate });
 }
 
 /* ======================
-   UPDATE PROFILE
+   PERSONAL POSTS
 ====================== */
-async function updateProfile() {
-  if (profileUserId !== myId) return;
-
-  const bioText = document.getElementById("bio").value.trim();
-  const file = document.getElementById("profilePicInput").files[0];
-
-  let profilePicUrl = null;
-
-  if (file) {
-    const fd = new FormData();
-    fd.append("image", file);
-
-    const upload = await fetch(API + "/api/media/image", {
-      method: "POST",
-      body: fd
-    });
-
-    const imgData = await upload.json();
-    profilePicUrl = imgData.imageUrl;
-  }
-
-  await fetch(API + "/api/users/profile", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({
-      bio: bioText,
-      profilePic: profilePicUrl
-    })
-  });
-
-  loadProfile();
-}
-
-function openDM() {
-  location.href = "chat.html?userId=" + profileUserId;
-}
-
-/* ======================
-   PERSONAL POSTS (SAFE)
-====================== */
-async function loadPersonalPosts({ profileUserId, isOwner, isFollower, isPrivate }) {
+async function loadPersonalPosts({ isOwner, isFollower, isPrivate }) {
   const container = document.getElementById("personalPosts");
   if (!container) return;
 
-  // 🔒 privacy rule
   if (!isOwner && isPrivate && !isFollower) {
     container.innerHTML = "<p style='color:#888'>🔒 Personal posts are private</p>";
     return;
   }
 
   try {
-    const res = await fetch(
-      API + "/api/personal-posts/" + profileUserId,
-      { headers: { Authorization: "Bearer " + token } }
-    );
+    const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
+      headers: { Authorization: "Bearer " + token }
+    });
 
     const list = await res.json();
     container.innerHTML = "";
 
-    if (!Array.isArray(list) || !list.length) {
+    if (!list.length) {
       container.innerHTML = "<p style='color:#888'>No personal posts</p>";
       return;
     }
@@ -226,17 +156,14 @@ async function loadPersonalPosts({ profileUserId, isOwner, isFollower, isPrivate
       div.style.marginBottom = "8px";
 
       div.innerHTML = `
-        <p>${p.content || ""}</p>
+        <p>${p.content}</p>
         <div style="font-size:12px;color:#666">
           ${new Date(p.createdAt).toLocaleString()}
         </div>
       `;
-
       container.appendChild(div);
     });
-
   } catch (e) {
-    console.error("Personal post load failed", e);
     container.innerHTML = "<p>Error loading personal posts</p>";
   }
 }
@@ -254,13 +181,53 @@ async function createPersonalPost() {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({
-      content: input.value.trim()
-    })
+    body: JSON.stringify({ content: input.value.trim() })
   });
 
   input.value = "";
-  loadProfile(); // reload profile + personal posts
+  loadProfile();
+}
+
+/* ======================
+   FOLLOW / UPDATE / CHAT
+====================== */
+async function toggleFollow() {
+  await fetch(API + "/api/users/follow/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadProfile();
+}
+
+async function updateProfile() {
+  if (profileUserId !== myId) return;
+
+  const bioText = document.getElementById("bio").value.trim();
+  const file = document.getElementById("profilePicInput").files[0];
+  let profilePicUrl = null;
+
+  if (file) {
+    const fd = new FormData();
+    fd.append("image", file);
+    const upload = await fetch(API + "/api/media/image", { method: "POST", body: fd });
+    const imgData = await upload.json();
+    profilePicUrl = imgData.imageUrl;
+  }
+
+  await fetch(API + "/api/users/profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ bio: bioText, profilePic: profilePicUrl })
+  });
+
+  loadProfile();
+}
+
+function openDM() {
+  location.href = "chat.html?userId=" + profileUserId;
 }
 
 /* ======================

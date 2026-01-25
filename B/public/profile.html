@@ -10,20 +10,21 @@
 
 <!-- PROFILE PIC -->
 <img id="profilePic" width="120" style="display:block;margin-bottom:10px" />
-
 <input type="file" id="profilePicInput" accept="image/*" />
-
 <br><br>
 
 <!-- BIO -->
 <input id="bio" placeholder="Your bio" />
-
 <br><br>
 
 <!-- FOLLOW COUNTS -->
+Followers:
+<span id="followersCount" onclick="openFollowers()" style="cursor:pointer;color:blue">0</span>
+|
+Following:
+<span id="followingCount" onclick="openFollowing()" style="cursor:pointer;color:blue">0</span>
 
-Followers: <span id="followersCount" onclick="openFollowers()" style="cursor:pointer;color:blue">0</span> |
-Following: <span id="followingCount" onclick="openFollowing()" style="cursor:pointer;color:blue">0</span>
+<br><br>
 
 <!-- ACTION BUTTONS -->
 <button id="saveBtn" onclick="updateProfile()">Save</button>
@@ -32,36 +33,34 @@ Following: <span id="followingCount" onclick="openFollowing()" style="cursor:poi
 
 <hr>
 
-<!-- POSTS -->
+<!-- PUBLIC POSTS -->
 <div id="postsSection">
-  <h4>Your Posts</h4>
+  <h4>Posts</h4>
   <div id="posts"></div>
 </div>
 
 <hr>
+
 <!-- PERSONAL POST CREATE (OWNER ONLY) -->
 <div id="personalPostBox" style="display:none;margin-bottom:10px">
-  <textarea id="personalPostText"
+  <h4>Create Personal Post</h4>
+  <textarea
+    id="personalPostText"
     placeholder="Write a personal post..."
     style="width:100%;height:80px"></textarea>
-
+  <br>
   <button onclick="createPersonalPost()">Post (Private)</button>
 </div>
 
-<hr>
-<h4>🔐 Personal Posts</h4>
-<div id="personalPosts"></div>
+<!-- PERSONAL POSTS HEADER -->
+<h4>🔒 Personal Posts</h4>
 
-<h3>🔒 Personal Posts</h3>
-
+<!-- REQUEST ACCESS (VISITOR ONLY) -->
 <button id="requestAccessBtn" style="display:none">
   Request Personal Access
 </button>
 
-<button id="createPersonalPostBtn" style="display:none">
-  + New Personal Post
-</button>
-
+<!-- PERSONAL POSTS LIST -->
 <div id="personalPosts" style="margin-top:10px"></div>
 
 <!-- FOLLOW LIST MODAL -->
@@ -73,7 +72,6 @@ Following: <span id="followingCount" onclick="openFollowing()" style="cursor:poi
   background:rgba(0,0,0,0.6);
   z-index:9999;
 ">
-
   <div style="
     background:#fff;
     max-width:400px;
@@ -83,7 +81,6 @@ Following: <span id="followingCount" onclick="openFollowing()" style="cursor:poi
   ">
     <h4 id="modalTitle"></h4>
     <div id="modalList"></div>
-
     <button onclick="closeModal()">Close</button>
   </div>
 </div>
