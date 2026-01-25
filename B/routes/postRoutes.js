@@ -54,8 +54,15 @@ router.get("/", auth, async (req, res) => {
     const myId = req.user.id;
 
     const posts = await Post.find()
-      .populate("userId", "name profilePic followers")
-      .sort({ _id: -1 }) // 🔥 STABLE SORT
+      .populate({
+        path: "userId",
+        select: "name profilePic followers",
+        populate: {
+          path: "followers",
+          select: "name profilePic"
+        }
+      })
+      .sort({ _id: -1 })
       .skip(skip)
       .limit(limit)
       .lean();

@@ -92,7 +92,7 @@ async function markAllSeenBtn() {
     headers: { Authorization: "Bearer " + token }
   });
 
-  refreshBadge();
+  
   loadNotifications();
 }
 
@@ -100,3 +100,6 @@ async function markAllSeenBtn() {
    INIT
 ====================== */
 
+document.addEventListener("DOMContentLoaded", () => {
+  loadNotifications();
+});
