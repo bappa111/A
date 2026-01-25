@@ -205,57 +205,75 @@ async function loadFeed() {
   const target = getPostFromURL();
 
   posts.forEach(p => {
-    if (!p.userId) return;
+  if (!p.userId) return;
 
-    const div = document.createElement("div");
-    div.style.border = "1px solid #ccc";
-    div.style.padding = "8px";
-    div.style.marginBottom = "12px";
+  const div = document.createElement("div");
+  div.style.border = "1px solid #ccc";
+  div.style.padding = "8px";
+  div.style.marginBottom = "12px";
 
-    div.innerHTML = `
-      <div style="display:flex;gap:8px;cursor:pointer"
-           onclick="goProfile('${p.userId._id}')">
-    <img src="${
-      p.userId.profilePic && p.userId.profilePic.trim() !== ""
+  div.innerHTML = `
+    <!-- USER HEADER -->
+    <div style="display:flex;gap:8px;align-items:center;cursor:pointer"
+         onclick="goProfile('${p.userId._id}')">
+
+      <img src="${p.userId.profilePic && p.userId.profilePic.trim() !== ""
         ? p.userId.profilePic
-        : "https://via.placeholder.com/40"
-    }">
-          style="width:32px;height:32px;border-radius:50%">
-        <b>${p.userId.name}</b>
-      </div>
+        : 'https://via.placeholder.com/40'}"
+           style="width:32px;height:32px;border-radius:50%;object-fit:cover">
 
-      ${renderFollowedBy(p)}
-      <p>${p.content || ""}</p>
-      <div style="font-size:12px;color:#888">${timeAgo(p.createdAt)}</div>
+      <b>${p.userId.name}</b>
+    </div>
 
-      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
-      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
+    ${
+    p.followedBy && p.followedBy.filter(Boolean).length
+      ? `<div style="margin-left:40px;font-size:12px;color:#666">
+           Followed by ${p.followedBy.filter(Boolean).join(", ")}
+         </div>`
+      : ""
+    }
 
+    <p style="margin:6px 0">${p.content || ""}</p>
+
+    <div style="font-size:12px;color:#888">
+      ${timeAgo(p.createdAt)}
+    </div>
+
+    ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
+
+    ${p.video ? `
+      <video controls style="max-width:100%;margin-top:6px">
+        <source src="${p.video}">
+      </video>` : ""}
+
+    <div style="margin-top:6px">
       <button onclick="toggleLike('${p._id}')">
         👍 Like (${p.likes?.length || 0})
       </button>
+    </div>
 
-      ${(p.comments || []).map(c => `
-        <div style="margin-left:10px">
-          💬 ${c.text}
-          <div style="font-size:11px;color:#888">${timeAgo(c.createdAt)}</div>
+    ${(p.comments || []).map(c => `
+      <div style="margin-left:10px;margin-top:4px">
+        💬 ${c.text}
+        <div style="font-size:11px;color:#888">
+          ${timeAgo(c.createdAt)}
         </div>
-      `).join("")}
+      </div>
+    `).join("")}
 
-      <input id="c-${p._id}" placeholder="Write comment..." style="width:70%">
-      <button onclick="addComment('${p._id}')">Send</button>
-    `;
+    <input id="c-${p._id}" placeholder="Write comment..." style="width:70%">
+    <button onclick="addComment('${p._id}')">Send</button>
 
-    if (target === p._id) {
-      div.style.border = "2px solid red";
-      setTimeout(() => {
-        div.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 300);
-      history.replaceState({}, "", "/feed.html");
+    ${
+      p.userId._id === getMyId()
+        ? `<button style="color:red;margin-left:10px"
+                   onclick="deletePost('${p._id}')">Delete</button>`
+        : ""
     }
+  `;
 
-    feed.appendChild(div);
-  });
+  feed.appendChild(div);
+});
 
   page++;
   loading = false;
@@ -357,6 +375,18 @@ async function loadMyProfilePic() {
   } catch (e) {
     console.error("Profile pic load failed", e);
   }
+}
+
+async function deletePost(id) {
+  if (!confirm("Delete this post?")) return;
+
+  await fetch(`${API}/api/posts/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  resetFeed();
+  loadFeed();
 }
 
 /* ======================
