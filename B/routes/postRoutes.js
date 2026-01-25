@@ -15,8 +15,6 @@ function emitNotification(userId, notification) {
   try {
     const io = getIO();
     if (!io) return;
-
-    // userId room এ পাঠানো
     io.to(userId.toString()).emit("notification", notification);
   } catch (e) {
     console.log("Post realtime error:", e.message);
@@ -34,12 +32,13 @@ router.post("/", auth, async (req, res) => {
       userId: req.user.id,
       content: content || "",
       image: image || null,
-      video: video || null,
-      createdAt: new Date()
+      video: video || null
+      // ❌ createdAt manually দিচ্ছি না (timestamps handles it)
     });
 
     res.json(post);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ msg: "Post create failed" });
   }
 });
@@ -56,7 +55,7 @@ router.get("/", auth, async (req, res) => {
 
     const posts = await Post.find()
       .populate("userId", "name profilePic followers")
-      .sort({ createdAt: -1, _id: -1 })
+      .sort({ _id: -1 }) // 🔥 STABLE SORT
       .skip(skip)
       .limit(limit)
       .lean();
@@ -72,6 +71,7 @@ router.get("/", auth, async (req, res) => {
 
     res.json(formatted);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ msg: "Feed load failed" });
   }
 });
@@ -96,8 +96,7 @@ router.post("/:id/like", auth, async (req, res) => {
           fromUser: userId,
           type: "like",
           text: "Someone liked your post",
-          link: `/feed.html?post=${post._id}`,
-          createdAt: new Date()
+          link: `/feed.html?post=${post._id}`
         });
 
         emitNotification(post.userId, notif);
@@ -109,6 +108,7 @@ router.post("/:id/like", auth, async (req, res) => {
     await post.save();
     res.json({ likes: post.likes.length });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ msg: "Like failed" });
   }
 });
@@ -123,8 +123,7 @@ router.post("/:id/comment", auth, async (req, res) => {
 
     post.comments.push({
       userId: req.user.id,
-      text: req.body.text,
-      createdAt: new Date()
+      text: req.body.text
     });
 
     await post.save();
@@ -135,8 +134,7 @@ router.post("/:id/comment", auth, async (req, res) => {
         fromUser: req.user.id,
         type: "comment",
         text: "Someone commented on your post",
-        link: `/feed.html?post=${post._id}`,
-        createdAt: new Date()
+        link: `/feed.html?post=${post._id}`
       });
 
       emitNotification(post.userId, notif);
@@ -144,6 +142,7 @@ router.post("/:id/comment", auth, async (req, res) => {
 
     res.json(post.comments);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ msg: "Comment failed" });
   }
 });
@@ -163,6 +162,7 @@ router.delete("/:id", auth, async (req, res) => {
     await post.deleteOne();
     res.json({ msg: "Post deleted" });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ msg: "Delete failed" });
   }
 });

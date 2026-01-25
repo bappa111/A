@@ -9,32 +9,23 @@ let noMorePosts = false;
    URL HELPERS
 ====================== */
 function getPostFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("post");
+  return new URLSearchParams(window.location.search).get("post");
 }
 
 /* ======================
    TIME HELPER
 ====================== */
 function timeAgo(dateString) {
-  const now = new Date();
-  const past = new Date(dateString);
-  const diff = Math.floor((now - past) / 1000);
-
+  const diff = Math.floor((Date.now() - new Date(dateString)) / 1000);
   if (diff < 60) return "Just now";
   const mins = Math.floor(diff / 60);
   if (mins < 60) return `${mins} min ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs > 1 ? "s" : ""} ago`;
+  const days = Math.floor(hrs / 24);
   if (days === 1) return "Yesterday";
   if (days < 7) return `${days} days ago`;
-
-  return past.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+  return new Date(dateString).toLocaleDateString("en-IN");
 }
 
 /* ======================
@@ -55,11 +46,12 @@ function resetFeed() {
   page = 1;
   loading = false;
   noMorePosts = false;
-  document.getElementById("feed").innerHTML = "";
+  const feed = document.getElementById("feed");
+  if (feed) feed.innerHTML = "";
 }
 
 /* ======================
-   SOCKET (REALTIME)
+   SOCKET
 ====================== */
 const socket = io(API, { query: { userId: getMyId() } });
 
@@ -77,59 +69,9 @@ function renderFollowedBy(p) {
     return `<div style="margin-left:40px;font-size:12px;color:#666">Followed by ${p.followedBy[0]}</div>`;
   if (p.followedBy.length === 2)
     return `<div style="margin-left:40px;font-size:12px;color:#666">Followed by ${p.followedBy[0]}, ${p.followedBy[1]}</div>`;
-  return `<div style="margin-left:40px;font-size:12px;color:#666">Followed by ${p.followedBy[0]} and ${p.followedBy.length - 1} others</div>`;
-}
-
-/* ======================
-   CREATE POST
-====================== */
-async function createPost() {
-  const text = postText.value.trim();
-  const img = postImage.files[0];
-  const vid = postVideo.files[0];
-
-  if (!text && !img && !vid) return alert("Write something");
-
-  let image = null, video = null;
-
-  if (img) {
-    const fd = new FormData();
-    fd.append("image", img);
-    image = (await (await fetch(API + "/api/media/image", { method: "POST", body: fd })).json()).imageUrl;
-  }
-
-  if (vid) {
-    const fd = new FormData();
-    fd.append("video", vid);
-    video = (await (await fetch(API + "/api/media/video", { method: "POST", body: fd })).json()).videoUrl;
-  }
-
-  await fetch(API + "/api/posts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-    body: JSON.stringify({ content: text, image, video })
-  });
-
-  postText.value = postImage.value = postVideo.value = "";
-  resetFeed();
-  loadFeed();
-}
-
-/* ======================
-   COMMENT
-====================== */
-async function addComment(id) {
-  const input = document.getElementById("c-" + id);
-  if (!input.value.trim()) return;
-
-  await fetch(API + "/api/posts/" + id + "/comment", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-    body: JSON.stringify({ text: input.value })
-  });
-
-  resetFeed();
-  loadFeed();
+  return `<div style="margin-left:40px;font-size:12px;color:#666">
+    Followed by ${p.followedBy[0]} and ${p.followedBy.length - 1} others
+  </div>`;
 }
 
 /* ======================
@@ -145,10 +87,9 @@ async function loadFeed() {
 
   const posts = await res.json();
 
-  if (!posts.length) {
+  if (!Array.isArray(posts) || posts.length === 0) {
+    noMorePosts = true;
     loading = false;
-    if (page === 1) setTimeout(loadFeed, 800);
-    else noMorePosts = true;
     return;
   }
 
@@ -162,8 +103,10 @@ async function loadFeed() {
     div.style.marginBottom = "12px";
 
     div.innerHTML = `
-      <div style="display:flex;gap:8px;cursor:pointer" onclick="goProfile('${p.userId._id}')">
-        <img src="${p.userId.profilePic || 'https://via.placeholder.com/32'}" style="width:32px;height:32px;border-radius:50%">
+      <div style="display:flex;gap:8px;cursor:pointer"
+           onclick="goProfile('${p.userId._id}')">
+        <img src="${p.userId.profilePic || 'https://via.placeholder.com/32'}"
+             style="width:32px;height:32px;border-radius:50%">
         <b>${p.userId.name}</b>
       </div>
       ${renderFollowedBy(p)}
@@ -198,20 +141,36 @@ async function loadFeed() {
 }
 
 /* ======================
-   PROFILE MENU
+   COMMENT
 ====================== */
-async function loadMyProfilePic() {
-  const res = await fetch(API + "/api/users/profile/" + getMyId(), {
-    headers: { Authorization: "Bearer " + token }
+async function addComment(id) {
+  const input = document.getElementById("c-" + id);
+  if (!input?.value.trim()) return;
+
+  await fetch(`${API}/api/posts/${id}/comment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ text: input.value })
   });
-  const data = await res.json();
-  if (data.user?.profilePic) profileMenuBtn.src = data.user.profilePic;
+
+  resetFeed();
+  loadFeed();
 }
 
+/* ======================
+   PROFILE MENU (SAFE)
+====================== */
 document.addEventListener("click", e => {
-  if (profileMenuBtn.contains(e.target))
-    profileDropdown.style.display = profileDropdown.style.display === "block" ? "none" : "block";
-  else profileDropdown.style.display = "none";
+  const btn = document.getElementById("profileMenuBtn");
+  const drop = document.getElementById("profileDropdown");
+  if (!btn || !drop) return;
+
+  if (btn.contains(e.target))
+    drop.style.display = drop.style.display === "block" ? "none" : "block";
+  else drop.style.display = "none";
 });
 
 function goMyProfile() { location.href = "profile.html"; }
@@ -221,7 +180,7 @@ function logout() { localStorage.clear(); location.href = "index.html"; }
    LIKE
 ====================== */
 async function toggleLike(id) {
-  await fetch(API + "/api/posts/" + id + "/like", {
+  await fetch(`${API}/api/posts/${id}/like`, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
@@ -233,20 +192,21 @@ async function toggleLike(id) {
    NOTIFICATION BADGE
 ====================== */
 async function loadNotificationCount() {
-  const res = await fetch(API + "/api/notifications/count", {
+  const res = await fetch(`${API}/api/notifications/count`, {
     headers: { Authorization: "Bearer " + token }
   });
-  notifCount.innerText = (await res.json()).count || 0;
+  const data = await res.json();
+  const badge = document.getElementById("notifCount");
+  if (badge) badge.innerText = data.count || 0;
 }
 
 /* ======================
    INIT
 ====================== */
 document.addEventListener("DOMContentLoaded", () => {
-  loadMyProfilePic();
-  loadNotificationCount();
   resetFeed();
   loadFeed();
+  loadNotificationCount();
 });
 
 /* ======================
