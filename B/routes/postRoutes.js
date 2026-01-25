@@ -38,9 +38,9 @@ router.post("/", auth, async (req, res) => {
 
     res.json(post);
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ msg: "Post create failed" });
-  }
+  console.error("POST CREATE ERROR:", e);
+  res.status(500).json({ msg: e.message || "Post create failed" });
+}
 });
 
 /* ======================

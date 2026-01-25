@@ -9,15 +9,14 @@ const router = express.Router();
 ====================== */
 router.get("/", auth, async (req, res) => {
   try {
-    const notifications = await Notification.find({
-      userId: req.user.id
-    })
+    const list = await Notification.find({ userId: req.user.id })
       .populate("fromUser", "name profilePic")
       .sort({ createdAt: -1 });
 
-    res.json(notifications);
-  } catch (err) {
-    res.status(500).json({ msg: "Failed to load notifications" });
+    res.json(list);
+  } catch (e) {
+    console.error("Notification load error:", e);
+    res.status(500).json([]);
   }
 });
 

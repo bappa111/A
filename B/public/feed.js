@@ -210,7 +210,7 @@ async function loadFeed() {
     div.innerHTML = `
       <div style="display:flex;gap:8px;cursor:pointer"
            onclick="goProfile('${p.userId._id}')">
-        <img src="${p.userId.profilePic || 'https://via.placeholder.com/32'}"
+        <img src="${p.userId.profilePic || 'https://via.placeholder.com/40'}"
              style="width:32px;height:32px;border-radius:50%">
         <b>${p.userId.name}</b>
       </div>
