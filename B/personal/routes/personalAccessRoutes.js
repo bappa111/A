@@ -32,6 +32,22 @@ router.post("/request/:ownerId", auth, async (req, res) => {
 });
 
 /* ======================
+   GET PENDING ACCESS REQUESTS (OWNER ONLY)
+====================== */
+router.get("/requests", auth, async (req, res) => {
+  try {
+    const requests = await Access.find({
+      owner: req.user.id,
+      status: "pending"
+    }).populate("requester", "name profilePic");
+
+    res.json(requests);
+  } catch (e) {
+    res.status(500).json([]);
+  }
+});
+
+/* ======================
    APPROVE ACCESS (OWNER ONLY)
 ====================== */
 router.post("/approve/:id", auth, async (req, res) => {
