@@ -70,4 +70,18 @@ router.post("/reject/:id", auth, async (req, res) => {
   res.json({ rejected: true });
 });
 
+/* ======================
+   CHECK MY ACCESS STATUS
+====================== */
+router.get("/status/:ownerId", auth, async (req, res) => {
+  const record = await Access.findOne({
+    owner: req.params.ownerId,
+    requester: req.user.id
+  });
+
+  if (!record) return res.json({ status: "none" });
+
+  res.json({ status: record.status });
+});
+
 module.exports = router;

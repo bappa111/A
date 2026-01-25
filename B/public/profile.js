@@ -16,6 +16,32 @@ const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
 const profileUserId = params.get("id") || myId;
 
+async function checkPersonalAccessStatus() {
+  const btn = document.getElementById("requestAccessBtn");
+  if (!btn) return;
+
+  const res = await fetch(
+    API + "/api/personal-access/status/" + profileUserId,
+    { headers: { Authorization: "Bearer " + token } }
+  );
+
+  const data = await res.json();
+
+  if (data.status === "pending") {
+    btn.innerText = "⏳ Request Pending";
+    btn.disabled = true;
+  }
+
+  if (data.status === "approved") {
+    btn.style.display = "none";
+  }
+
+  if (data.status === "rejected") {
+    btn.innerText = "Request Again";
+    btn.disabled = false;
+  }
+}
+
 /* ======================
    PROFILE HEADER NAME
 ====================== */
@@ -83,15 +109,15 @@ async function loadProfile() {
   /* PRIVATE PROFILE LOCK */
   if (isPrivate && !isOwner && !isFollower) {
   postsSection.style.display = "none";
-    followBtn.style.display = "inline-block";
-    followBtn.innerText = "Follow";
 
-    requestBtn.style.display = "inline-block";
-    requestBtn.onclick = requestPersonalAccess;
+  followBtn.style.display = "inline-block";
+followBtn.innerText = "Follow"; // ✅ ADD THIS
+  requestBtn.style.display = "inline-block";
+  requestBtn.onclick = requestPersonalAccess;
 
-  await loadPersonalPosts({ isOwner, isFollower, isPrivate });
-    return;
-  }
+  await checkPersonalAccessStatus();
+  return;
+}
 
   /* OWNER UI */
   if (isOwner) {
@@ -305,12 +331,15 @@ function openDM() {
 }
 
 async function requestPersonalAccess() {
+  const btn = document.getElementById("requestAccessBtn");
+
   await fetch(API + "/api/personal-access/request/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  alert("🔒 Personal access request sent");
+  btn.innerText = "⏳ Request Pending";
+  btn.disabled = true;
 }
 
 /* ======================
