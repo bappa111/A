@@ -178,25 +178,40 @@ async function loadPersonalPosts({ isOwner }) {
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-  const list = await res.json();
 
+  const list = await res.json();
   container.innerHTML = "";
+
   if (!list.length) {
     container.innerHTML = "<p style='color:#888'>No personal posts</p>";
     return;
   }
 
+  // ✅ একমাত্র সঠিক জায়গা
   list.forEach(p => {
     const div = document.createElement("div");
     div.style.border = "1px dashed #aaa";
     div.style.padding = "8px";
     div.style.marginBottom = "8px";
+
     div.innerHTML = `
-      <p>${p.content}</p>
+      <p>${p.content || ""}</p>
+
+      ${p.image ? `
+        <img src="${p.image}" style="max-width:100%;margin-top:6px">
+      ` : ""}
+
+      ${p.video ? `
+        <video controls style="max-width:100%;margin-top:6px">
+          <source src="${p.video}">
+        </video>
+      ` : ""}
+
       <div style="font-size:12px;color:#666">
         ${new Date(p.createdAt).toLocaleString()}
       </div>
     `;
+
     container.appendChild(div);
   });
 }
@@ -257,19 +272,54 @@ async function rejectAccess(id) {
    CREATE PERSONAL POST
 ====================== */
 async function createPersonalPost() {
-  const input = document.getElementById("personalPostText");
-  if (!input || !input.value.trim()) return;
+  const text = document.getElementById("personalPostText").value.trim();
+  const file = document.getElementById("personalPostMedia").files[0];
 
+  if (!text && !file) {
+    alert("Write something or select image/video");
+    return;
+  }
+
+  let image = null;
+  let video = null;
+
+  // 🔼 upload media if exists
+  if (file) {
+    const fd = new FormData();
+    fd.append("image", file);
+
+    const upload = await fetch(API + "/api/media/image", {
+      method: "POST",
+      body: fd
+    });
+
+    const data = await upload.json();
+
+    if (file.type.startsWith("video")) {
+      video = data.imageUrl;
+    } else {
+      image = data.imageUrl;
+    }
+  }
+
+  // 🔐 create personal post
   await fetch(API + "/api/personal-posts", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({ content: input.value.trim() })
+    body: JSON.stringify({
+      content: text,
+      image,
+      video
+    })
   });
 
-  input.value = "";
+  // reset
+  document.getElementById("personalPostText").value = "";
+  document.getElementById("personalPostMedia").value = "";
+
   loadProfile();
 }
 
