@@ -82,12 +82,14 @@ async function loadProfile() {
 
   /* PRIVATE PROFILE LOCK */
   if (isPrivate && !isOwner && !isFollower) {
-    postsSection.style.display = "none";
+  postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
 
     requestBtn.style.display = "inline-block";
-    await loadPersonalPosts({ isOwner, isFollower, isPrivate });
+    requestBtn.onclick = requestPersonalAccess;
+
+  await loadPersonalPosts({ isOwner, isFollower, isPrivate });
     return;
   }
 
@@ -169,6 +171,78 @@ async function loadPersonalPosts({ isOwner, isFollower, isPrivate }) {
 }
 
 /* ======================
+   LOAD PERSONAL ACCESS REQUESTS (OWNER ONLY)
+====================== */
+async function loadPersonalAccessRequests() {
+  if (profileUserId !== myId) return;
+
+  const box = document.getElementById("personalAccessRequests");
+  const list = document.getElementById("accessRequestList");
+  if (!box || !list) return;
+
+  box.style.display = "block";
+  list.innerHTML = "Loading...";
+
+  try {
+    const res = await fetch(API + "/api/personal-access/requests", {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const requests = await res.json();
+    list.innerHTML = "";
+
+    if (!Array.isArray(requests) || !requests.length) {
+      list.innerHTML = "<p style='color:#666'>No pending requests</p>";
+      return;
+    }
+
+    requests.forEach(r => {
+      const div = document.createElement("div");
+      div.style.border = "1px solid #ccc";
+      div.style.padding = "8px";
+      div.style.marginBottom = "6px";
+
+      div.innerHTML = `
+        <b>${r.requester.name}</b>
+        <div style="margin-top:6px">
+          <button onclick="approveAccess('${r._id}')">Approve</button>
+          <button onclick="rejectAccess('${r._id}')">Reject</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = "<p>Error loading requests</p>";
+  }
+}
+
+async function approveAccess(id) {
+  await fetch(API + "/api/personal-access/approve/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadPersonalAccessRequests();
+  loadPersonalPosts({
+    profileUserId,
+    isOwner: true,
+    isFollower: true,
+    isPrivate: false
+  });
+}
+
+async function rejectAccess(id) {
+  await fetch(API + "/api/personal-access/reject/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadPersonalAccessRequests();
+}
+
+/* ======================
    CREATE PERSONAL POST
 ====================== */
 async function createPersonalPost() {
@@ -230,8 +304,18 @@ function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
 }
 
+async function requestPersonalAccess() {
+  await fetch(API + "/api/personal-access/request/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  alert("🔒 Personal access request sent");
+}
+
 /* ======================
    INIT
 ====================== */
 loadMyProfileHeader();
 loadProfile();
+loadPersonalAccessRequests();
