@@ -1,6 +1,14 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
+if (!token) {
+  alert("No token found. Please login again.");
+  location.href = "index.html";
+}
+
+/* ======================
+   STATE
+====================== */
 let page = 1;
 let loading = false;
 let noMorePosts = false;
@@ -53,29 +61,119 @@ function resetFeed() {
 /* ======================
    SOCKET (REALTIME)
 ====================== */
-const socket = io(API, { query: { userId: getMyId() } });
+const socket = io(API, {
+  query: { userId: getMyId() }
+});
 
 socket.on("notification", () => {
   loadNotificationCount();
-  if (typeof loadNotifications === "function") loadNotifications();
+  if (typeof loadNotifications === "function") {
+    loadNotifications();
+  }
 });
 
 /* ======================
    FOLLOWED BY
 ====================== */
 function renderFollowedBy(p) {
-  if (!p.followedBy?.length) return "";
-  if (p.followedBy.length === 1)
-    return `<div style="margin-left:40px;font-size:12px;color:#666">Followed by ${p.followedBy[0]}</div>`;
-  if (p.followedBy.length === 2)
-    return `<div style="margin-left:40px;font-size:12px;color:#666">Followed by ${p.followedBy[0]}, ${p.followedBy[1]}</div>`;
+  if (!p.followedBy || !p.followedBy.length) return "";
+  if (p.followedBy.length === 1) {
+    return `<div style="margin-left:40px;font-size:12px;color:#666">
+      Followed by ${p.followedBy[0]}
+    </div>`;
+  }
+  if (p.followedBy.length === 2) {
+    return `<div style="margin-left:40px;font-size:12px;color:#666">
+      Followed by ${p.followedBy[0]}, ${p.followedBy[1]}
+    </div>`;
+  }
   return `<div style="margin-left:40px;font-size:12px;color:#666">
     Followed by ${p.followedBy[0]} and ${p.followedBy.length - 1} others
   </div>`;
 }
 
 /* ======================
-   LOAD FEED (FIXED)
+   CREATE POST  ✅ FIXED
+====================== */
+async function createPost() {
+  const postTextEl = document.getElementById("postText");
+  const postImageEl = document.getElementById("postImage");
+  const postVideoEl = document.getElementById("postVideo");
+
+  if (!postTextEl || !postImageEl || !postVideoEl) {
+    alert("Post input missing");
+    return;
+  }
+
+  const text = postTextEl.value.trim();
+  const img = postImageEl.files[0];
+  const vid = postVideoEl.files[0];
+
+  if (!text && !img && !vid) {
+    alert("Write something or select image/video");
+    return;
+  }
+
+  let image = null;
+  let video = null;
+
+  try {
+    if (img) {
+      const fd = new FormData();
+      fd.append("image", img);
+
+      const res = await fetch(API + "/api/media/image", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd
+      });
+
+      const data = await res.json();
+      image = data.imageUrl || null;
+    }
+
+    if (vid) {
+      const fd = new FormData();
+      fd.append("video", vid);
+
+      const res = await fetch(API + "/api/media/video", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd
+      });
+
+      const data = await res.json();
+      video = data.videoUrl || null;
+    }
+
+    await fetch(API + "/api/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({
+        content: text,
+        image,
+        video
+      })
+    });
+
+    postTextEl.value = "";
+    postImageEl.value = "";
+    postVideoEl.value = "";
+
+    resetFeed();
+    loadFeed();
+
+  } catch (e) {
+    alert("Post failed");
+    console.error(e);
+  }
+}
+
+/* ======================
+   LOAD FEED (PAGINATION FIXED)
 ====================== */
 async function loadFeed() {
   if (loading || noMorePosts) return;
@@ -87,19 +185,14 @@ async function loadFeed() {
       headers: { Authorization: "Bearer " + token }
     });
     posts = await res.json();
-  } catch (e) {
+  } catch {
     loading = false;
     return;
   }
 
-  // 🔥 IMPORTANT FIX
   if (!Array.isArray(posts) || posts.length === 0) {
+    if (page > 1) noMorePosts = true;
     loading = false;
-
-    // only stop pagination AFTER page 1
-    if (page > 1) {
-      noMorePosts = true;
-    }
     return;
   }
 
@@ -146,7 +239,9 @@ async function loadFeed() {
 
     if (target === p._id) {
       div.style.border = "2px solid red";
-      setTimeout(() => div.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
+      setTimeout(() => {
+        div.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
       history.replaceState({}, "", "/feed.html");
     }
 
@@ -178,7 +273,19 @@ async function addComment(id) {
 }
 
 /* ======================
-   PROFILE MENU (SAFE)
+   LIKE
+====================== */
+async function toggleLike(id) {
+  await fetch(`${API}/api/posts/${id}/like`, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  resetFeed();
+  loadFeed();
+}
+
+/* ======================
+   PROFILE MENU
 ====================== */
 document.addEventListener("click", e => {
   const btn = document.getElementById("profileMenuBtn");
@@ -192,19 +299,13 @@ document.addEventListener("click", e => {
   }
 });
 
-function goMyProfile() { location.href = "profile.html"; }
-function logout() { localStorage.clear(); location.href = "index.html"; }
+function goMyProfile() {
+  location.href = "profile.html";
+}
 
-/* ======================
-   LIKE
-====================== */
-async function toggleLike(id) {
-  await fetch(`${API}/api/posts/${id}/like`, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token }
-  });
-  resetFeed();
-  loadFeed();
+function logout() {
+  localStorage.clear();
+  location.href = "index.html";
 }
 
 /* ======================
