@@ -309,6 +309,10 @@ function goProfile(userId) {
   location.href = "profile.html?id=" + userId;
 }
 
+function goMyProfile() {
+  location.href = "profile.html";
+}
+
 function logout() {
   localStorage.clear();
   location.href = "index.html";
