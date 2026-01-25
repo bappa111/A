@@ -320,10 +320,36 @@ async function loadNotificationCount() {
   if (badge) badge.innerText = data.count || 0;
 }
 
+/*togglemenu pic*/
+async function loadMyProfilePic() {
+  const myId = getMyId();
+  if (!myId || !token) return;
+
+  try {
+    const res = await fetch(API + "/api/users/profile/" + myId, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const data = await res.json();
+
+    const img = document.getElementById("profileMenuBtn");
+    if (!img) return;
+
+    if (data.user && data.user.profilePic) {
+      img.src = data.user.profilePic;
+    } else {
+      img.src = "https://via.placeholder.com/40";
+    }
+  } catch (e) {
+    console.error("Profile pic load failed", e);
+  }
+}
+
 /* ======================
    INIT
 ====================== */
 document.addEventListener("DOMContentLoaded", () => {
+  loadMyProfilePic();        // ✅ ADD THIS
   resetFeed();
   loadFeed();
   loadNotificationCount();
