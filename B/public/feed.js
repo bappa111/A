@@ -51,7 +51,7 @@ function resetFeed() {
 }
 
 /* ======================
-   SOCKET
+   SOCKET (REALTIME)
 ====================== */
 const socket = io(API, { query: { userId: getMyId() } });
 
@@ -75,21 +75,31 @@ function renderFollowedBy(p) {
 }
 
 /* ======================
-   LOAD FEED
+   LOAD FEED (FIXED)
 ====================== */
 async function loadFeed() {
   if (loading || noMorePosts) return;
   loading = true;
 
-  const res = await fetch(`${API}/api/posts?page=${page}`, {
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  const posts = await res.json();
-
-  if (!Array.isArray(posts) || posts.length === 0) {
-    noMorePosts = true;
+  let posts = [];
+  try {
+    const res = await fetch(`${API}/api/posts?page=${page}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+    posts = await res.json();
+  } catch (e) {
     loading = false;
+    return;
+  }
+
+  // 🔥 IMPORTANT FIX
+  if (!Array.isArray(posts) || posts.length === 0) {
+    loading = false;
+
+    // only stop pagination AFTER page 1
+    if (page > 1) {
+      noMorePosts = true;
+    }
     return;
   }
 
@@ -97,6 +107,8 @@ async function loadFeed() {
   const target = getPostFromURL();
 
   posts.forEach(p => {
+    if (!p.userId) return;
+
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
@@ -109,12 +121,17 @@ async function loadFeed() {
              style="width:32px;height:32px;border-radius:50%">
         <b>${p.userId.name}</b>
       </div>
+
       ${renderFollowedBy(p)}
       <p>${p.content || ""}</p>
       <div style="font-size:12px;color:#888">${timeAgo(p.createdAt)}</div>
+
       ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
       ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
-      <button onclick="toggleLike('${p._id}')">👍 Like (${p.likes.length})</button>
+
+      <button onclick="toggleLike('${p._id}')">
+        👍 Like (${p.likes?.length || 0})
+      </button>
 
       ${(p.comments || []).map(c => `
         <div style="margin-left:10px">
@@ -129,7 +146,7 @@ async function loadFeed() {
 
     if (target === p._id) {
       div.style.border = "2px solid red";
-      setTimeout(() => div.scrollIntoView({ behavior: "smooth" }), 300);
+      setTimeout(() => div.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
       history.replaceState({}, "", "/feed.html");
     }
 
@@ -145,7 +162,7 @@ async function loadFeed() {
 ====================== */
 async function addComment(id) {
   const input = document.getElementById("c-" + id);
-  if (!input?.value.trim()) return;
+  if (!input || !input.value.trim()) return;
 
   await fetch(`${API}/api/posts/${id}/comment`, {
     method: "POST",
@@ -168,9 +185,11 @@ document.addEventListener("click", e => {
   const drop = document.getElementById("profileDropdown");
   if (!btn || !drop) return;
 
-  if (btn.contains(e.target))
+  if (btn.contains(e.target)) {
     drop.style.display = drop.style.display === "block" ? "none" : "block";
-  else drop.style.display = "none";
+  } else if (!drop.contains(e.target)) {
+    drop.style.display = "none";
+  }
 });
 
 function goMyProfile() { location.href = "profile.html"; }
@@ -213,6 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
    INFINITE SCROLL
 ====================== */
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200)
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
     loadFeed();
+  }
 });
