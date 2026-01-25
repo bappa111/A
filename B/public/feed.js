@@ -76,19 +76,24 @@ socket.on("notification", () => {
    FOLLOWED BY
 ====================== */
 function renderFollowedBy(p) {
-  if (!p.followedBy || !p.followedBy.length) return "";
-  if (p.followedBy.length === 1) {
+  if (!Array.isArray(p.followedBy)) return "";
+  const clean = p.followedBy.filter(Boolean);
+  if (!clean.length) return "";
+
+  if (clean.length === 1) {
     return `<div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${p.followedBy[0]}
+      Followed by ${clean[0]}
     </div>`;
   }
-  if (p.followedBy.length === 2) {
+
+  if (clean.length === 2) {
     return `<div style="margin-left:40px;font-size:12px;color:#666">
-      Followed by ${p.followedBy[0]}, ${p.followedBy[1]}
+      Followed by ${clean[0]}, ${clean[1]}
     </div>`;
   }
+
   return `<div style="margin-left:40px;font-size:12px;color:#666">
-    Followed by ${p.followedBy[0]} and ${p.followedBy.length - 1} others
+    Followed by ${clean[0]} and ${clean.length - 1} others
   </div>`;
 }
 
@@ -299,8 +304,9 @@ document.addEventListener("click", e => {
   }
 });
 
-function goMyProfile() {
-  location.href = "profile.html";
+function goProfile(userId) {
+  if (!userId) return;
+  location.href = "profile.html?id=" + userId;
 }
 
 function logout() {

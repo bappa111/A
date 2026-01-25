@@ -87,25 +87,16 @@ async function singleSeen(id) {
    MARK ALL READ
 ====================== */
 async function markAllSeenBtn() {
-  const res = await fetch(API + "/api/notifications", {
+  await fetch(API + "/api/notifications/seen-all", {
+    method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  const list = await res.json();
-
-  for (let n of list) {
-    if (!n.seen) {
-      await fetch(API + "/api/notifications/seen/" + n._id, {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token }
-      });
-    }
-  }
-
+  refreshBadge();
   loadNotifications();
 }
 
 /* ======================
    INIT
 ====================== */
-loadNotifications();
+
