@@ -14,14 +14,24 @@ router.get("/", auth, async (req, res) => {
     })
       .populate({
         path: "fromUser",
-        select: "name profilePic"
+        select: "name profilePic",
+        options: { strictPopulate: false }
       })
       .sort({ createdAt: -1 })
-      .lean(); // 🔥 IMPORTANT
+      .lean();
 
-    res.json(notifications);
-  } catch (err) {
-    console.error("Notification load error:", err);
+    // 🔥 HARD SAFETY FIX
+    const safeList = notifications.map(n => ({
+      ...n,
+      fromUser: n.fromUser || {
+        name: "System",
+        profilePic: "/default-user.png"
+      }
+    }));
+
+    res.json(safeList);
+  } catch (e) {
+    console.error("Notification load error:", e);
     res.status(500).json([]);
   }
 });
