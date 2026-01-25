@@ -36,6 +36,23 @@ function timeAgo(dateString) {
   return new Date(dateString).toLocaleDateString("en-IN");
 }
 
+/*share link*/
+function sharePost(postId) {
+  const url = `${location.origin}/feed.html?post=${postId}`;
+
+  // Mobile (Android / iOS)
+  if (navigator.share) {
+    navigator.share({
+      title: "Check this post",
+      url
+    }).catch(() => {});
+  } 
+  // Desktop fallback
+  else {
+    navigator.clipboard.writeText(url);
+    alert("Post link copied!");
+  }
+}
 /* ======================
    AUTH
 ====================== */
@@ -206,6 +223,10 @@ ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
 ${p.video ? `<video controls style="max-width:100%;margin-top:6px"><source src="${p.video}"></video>` : ""}
 
 <button onclick="toggleLike('${p._id}')">👍 Like (${p.likes?.length || 0})</button>
+
+<button onclick="sharePost('${p._id}')">
+  🔗 Share
+</button>
 
 ${(p.comments || []).map(c => `
   <div style="margin-left:10px">
