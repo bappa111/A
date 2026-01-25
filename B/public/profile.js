@@ -121,6 +121,13 @@ async function loadProfile() {
   });
 }
 
+await loadPersonalPosts({
+    profileUserId,
+    isOwner,
+    isFollower,
+    isPrivate
+  });
+
 /* ======================
    FOLLOW / UNFOLLOW
 ====================== */
@@ -182,6 +189,55 @@ async function updateProfile() {
 
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
+}
+
+/* ======================
+   PERSONAL POSTS (SAFE)
+====================== */
+async function loadPersonalPosts({ profileUserId, isOwner, isFollower, isPrivate }) {
+  const container = document.getElementById("personalPosts");
+  if (!container) return;
+
+  // 🔒 privacy rule
+  if (!isOwner && isPrivate && !isFollower) {
+    container.innerHTML = "<p style='color:#888'>🔒 Personal posts are private</p>";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      API + "/api/personal-posts/" + profileUserId,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+
+    const list = await res.json();
+    container.innerHTML = "";
+
+    if (!Array.isArray(list) || !list.length) {
+      container.innerHTML = "<p style='color:#888'>No personal posts</p>";
+      return;
+    }
+
+    list.forEach(p => {
+      const div = document.createElement("div");
+      div.style.border = "1px dashed #aaa";
+      div.style.padding = "8px";
+      div.style.marginBottom = "8px";
+
+      div.innerHTML = `
+        <p>${p.content || ""}</p>
+        <div style="font-size:12px;color:#666">
+          ${new Date(p.createdAt).toLocaleString()}
+        </div>
+      `;
+
+      container.appendChild(div);
+    });
+
+  } catch (e) {
+    console.error("Personal post load failed", e);
+    container.innerHTML = "<p>Error loading personal posts</p>";
+  }
 }
 
 /* ======================

@@ -42,6 +42,10 @@ app.use("/api/messages", require("./routes/messageRoutes"));
 app.use("/api/posts", require("./routes/postRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 
+/*personal routes*/
+app.use("/api/personal-posts", require("./personal/routes/personalPostRoutes"));
+app.use("/api/personal-access", require("./personal/routes/personalAccessRoutes"));
+
 /* ======================
    SOCKET
 ====================== */
