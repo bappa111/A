@@ -27,8 +27,10 @@ const initSocket = (server) => {
        USER ONLINE
     ====================== */
     if (userId) {
-      const uid = userId.toString();
+       const uid = userId.toString();
       onlineUsers.set(uid, socket.id);
+
+      socket.join(uid); // 🔥🔥 THIS IS THE FIX (ABSOLUTELY REQUIRED)
 
       try {
         await User.findByIdAndUpdate(uid, {
