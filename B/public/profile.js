@@ -394,6 +394,59 @@ function closeModal() {
   document.getElementById("followModal").style.display = "none";
 }
 
+async function createPersonalPost() {
+  const text = document.getElementById("personalPostText").value.trim();
+  const fileInput = document.getElementById("personalPostMedia");
+  const file = fileInput.files[0];
+
+  if (!text && !file) {
+    alert("Write something or select image/video");
+    return;
+  }
+
+  let image = null;
+  let video = null;
+
+  if (file) {
+    const fd = new FormData();
+
+    if (file.type.startsWith("video")) {
+      fd.append("video", file);
+      const up = await fetch(API + "/api/media/video", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd
+      });
+      const d = await up.json();
+      video = d.videoUrl;
+    } else {
+      fd.append("image", file);
+      const up = await fetch(API + "/api/media/image", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+        body: fd
+      });
+      const d = await up.json();
+      image = d.imageUrl;
+    }
+  }
+
+  await fetch(API + "/api/personal-posts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ content: text, image, video })
+  });
+
+  // reset UI
+  document.getElementById("personalPostText").value = "";
+  fileInput.value = "";
+
+  // 🔥 reload only personal posts
+  loadPersonalPosts({ isOwner: true });
+}
 
 async function requestPersonalAccess() {
   const btn = document.getElementById("requestAccessBtn");
@@ -410,3 +463,4 @@ async function requestPersonalAccess() {
 ====================== */
 loadMyProfileHeader();
 loadProfile();
+
