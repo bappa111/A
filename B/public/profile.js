@@ -84,6 +84,9 @@ async function loadMyProfileHeader() {
 /* ======================
    LOAD PROFILE
 ====================== */
+/* ======================
+   LOAD PROFILE (FINAL)
+====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
@@ -96,44 +99,58 @@ async function loadProfile() {
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
 
+  // === ELEMENTS ===
   const img = document.getElementById("profilePic");
-  const bio = document.getElementById("bio");
   const nameInput = document.getElementById("nameInput");
-  const postsSection = document.getElementById("postsSection");
-  const posts = document.getElementById("posts");
-  const chatBtn = document.getElementById("chatBtn");
-  const followBtn = document.getElementById("followBtn");
+  const bio = document.getElementById("bio");
+  const editBtn = document.getElementById("editProfileBtn");
   const saveBtn = document.getElementById("saveBtn");
   const picInput = document.getElementById("profilePicInput");
+
+  const postsSection = document.getElementById("postsSection");
+  const posts = document.getElementById("posts");
   const personalBox = document.getElementById("personalPostBox");
+
+  const chatBtn = document.getElementById("chatBtn");
+  const followBtn = document.getElementById("followBtn");
   const requestBtn = document.getElementById("requestAccessBtn");
 
+  // === RESET UI (IMPORTANT) ===
   saveBtn.style.display = "none";
   picInput.style.display = "none";
+  personalBox.style.display = "none";
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
-  personalBox.style.display = "none";
   requestBtn.style.display = "none";
   postsSection.style.display = "block";
 
+  // === BASIC DATA ===
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
+  nameInput.value = data.user.name || "";
   bio.value = data.user.bio || "";
-  bio.disabled = !isOwner;
-  if (nameInput) {
-    nameInput.value = data.user.name || "";
-    nameInput.disabled = !isOwner;
-  }
-// 🔒 always lock inputs by default
-if (isOwner) {
-  nameInput.disabled = true;
-  bio.disabled = true;
-  saveBtn.style.display = "none";
-}
 
+  // === OWNER VS VISITOR ===
+  if (isOwner) {
+    // 🔒 locked by default
+    nameInput.disabled = true;
+    bio.disabled = true;
+
+    editBtn.style.display = "inline-block";
+    picInput.style.display = "inline-block";
+    personalBox.style.display = "block";
+  } else {
+    // ❌ visitor → no edit
+    nameInput.disabled = true;
+    bio.disabled = true;
+    editBtn.style.display = "none";
+  }
+
+  // === PRIVATE PROFILE LOGIC ===
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
+
     requestBtn.style.display = "inline-block";
     requestBtn.onclick = requestPersonalAccess;
 
@@ -142,25 +159,23 @@ if (isOwner) {
     return;
   }
 
-    if (isOwner) {
-    saveBtn.style.display = "none"; // default hidden
-
-    picInput.style.display = "inline-block";
-    personalBox.style.display = "block";
-  }
-
+  // === FOLLOW / CHAT ===
   if (!isOwner) {
     followBtn.style.display = "inline-block";
     followBtn.innerText = isFollower ? "Unfollow" : "Follow";
-    if (!isPrivate || isFollower) chatBtn.style.display = "inline-block";
+    if (!isPrivate || isFollower) {
+      chatBtn.style.display = "inline-block";
+    }
   }
 
+  // === POSTS ===
   posts.innerHTML = "";
   data.posts.forEach(p => {
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
     div.style.marginBottom = "10px";
+
     div.innerHTML = `
       <p>${p.content || ""}</p>
       ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
@@ -171,7 +186,6 @@ if (isOwner) {
 
   await loadPersonalPosts({ isOwner });
 }
-
 /* ======================
    LOAD PERSONAL POSTS
 ====================== */
