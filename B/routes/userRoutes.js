@@ -4,20 +4,19 @@ const Post = require("../models/Post");
 const Notification = require("../models/Notification");
 const auth = require("../middleware/authMiddleware");
 
-/* 🔥 SOCKET (REALTIME) */
+/* 🔥 SOCKET */
 const { getIO } = require("../socket/socket");
 
 const router = express.Router();
 
 /* ======================
    REALTIME NOTIFICATION HELPER
-   (ONLY for notifications – NOT profile)
+   (ONLY notifications, NOT profile)
 ====================== */
 function emitNotification(userId, notification) {
   try {
     const io = getIO();
     if (!io) return;
-
     io.to(userId.toString()).emit("notification", notification);
   } catch (e) {
     console.log("Realtime emit error:", e.message);
@@ -103,13 +102,13 @@ router.get("/profile/:id", auth, async (req, res) => {
       },
       posts
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ msg: "Profile load failed" });
   }
 });
 
 /* ======================
-   UPDATE OWN PROFILE (🔥 FINAL & SAFE)
+   UPDATE OWN PROFILE (FINAL & SAFE)
 ====================== */
 router.put("/profile", auth, async (req, res) => {
   try {
@@ -133,24 +132,14 @@ router.put("/profile", auth, async (req, res) => {
       { new: true }
     );
 
-    /* 🔥 REAL-TIME PROFILE UPDATE */
+    /* 🔥 REALTIME PROFILE UPDATE
+       only owner room – frontend reloads itself */
     const io = getIO();
-
-    // নিজের সব open tab / device
-    io.to(req.user.id.toString()).emit("profile-updated", {
-      userId: req.user.id,
-      name: user.name,
-      bio: user.bio,
-      profilePic: user.profilePic
-    });
-
-    // যারা এই profile দেখছে
-    io.emit("profile-updated", {
-      userId: req.user.id,
-      name: user.name,
-      bio: user.bio,
-      profilePic: user.profilePic
-    });
+    if (io) {
+      io.to(req.user.id.toString()).emit("profile-updated", {
+        userId: req.user.id
+      });
+    }
 
     res.json({ ok: true, user });
   } catch {
@@ -169,6 +158,7 @@ router.post("/follow/:id", auth, async (req, res) => {
   if (me._id.toString() === other._id.toString())
     return res.status(400).json({ msg: "Cannot follow yourself" });
 
+  /* UNFOLLOW */
   if (me.following.includes(other._id)) {
     me.following.pull(other._id);
     other.followers.pull(me._id);
@@ -177,6 +167,7 @@ router.post("/follow/:id", auth, async (req, res) => {
     return res.json({ followed: false });
   }
 
+  /* PRIVATE → REQUEST */
   if (other.isPrivate) {
     if (!other.followRequests.includes(me._id)) {
       other.followRequests.push(me._id);
@@ -195,6 +186,7 @@ router.post("/follow/:id", auth, async (req, res) => {
     return res.json({ requested: true });
   }
 
+  /* PUBLIC → DIRECT FOLLOW */
   me.following.push(other._id);
   other.followers.push(me._id);
   await me.save();

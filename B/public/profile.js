@@ -16,22 +16,21 @@ const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
 const profileUserId = params.get("id") || myId;
 
+/* ======================
+   SOCKET (SAFE & SIMPLE)
+====================== */
 let socket = null;
-if (token) {
+if (token && typeof io !== "undefined") {
   socket = io(API, { query: { userId: myId } });
+
+  socket.on("profile-updated", data => {
+    if (data.userId !== profileUserId) return;
+    loadProfile(); // only reload profile
+  });
 }
 
 /* ======================
-   SOCKET (FINAL FIX)
-   ⚠️ socket শুধু reload করবে
-====================== */
-socket.on("profile-updated", data => {
-  if (data.userId !== profileUserId) return;
-  loadProfile(); // 🔥 ONLY THIS
-});
-
-/* ======================
-   CHECK PERSONAL ACCESS STATUS
+   PERSONAL ACCESS STATUS
 ====================== */
 async function checkPersonalAccessStatus() {
   const btn = document.getElementById("requestAccessBtn");
@@ -41,14 +40,14 @@ async function checkPersonalAccessStatus() {
     API + "/api/personal-access/status/" + profileUserId,
     { headers: { Authorization: "Bearer " + token } }
   );
-
   const data = await res.json();
+
   if (data.status === "pending") {
     btn.innerText = "⏳ Request Pending";
     btn.disabled = true;
-  }
-  if (data.status === "approved") btn.style.display = "none";
-  if (data.status === "rejected") {
+  } else if (data.status === "approved") {
+    btn.style.display = "none";
+  } else if (data.status === "rejected") {
     btn.innerText = "Request Again";
     btn.disabled = false;
   }
@@ -59,22 +58,25 @@ async function checkPersonalAccessStatus() {
 ====================== */
 async function loadMyProfileHeader() {
   if (!token) return;
+
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
   const data = await res.json();
+
   const title = document.getElementById("profileTitle");
-  if (title && data.user?.name) title.innerText = data.user.name;
+  if (title && data.user?.name) {
+    title.innerText = data.user.name;
+  }
 }
 
 /* ======================
-   LOAD PROFILE (FINAL & SAFE)
+   LOAD PROFILE (FINAL)
 ====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
@@ -82,6 +84,7 @@ async function loadProfile() {
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
 
+  /* ELEMENTS */
   const img = document.getElementById("profilePic");
   const nameInput = document.getElementById("nameInput");
   const bio = document.getElementById("bio");
@@ -97,7 +100,7 @@ async function loadProfile() {
   const followBtn = document.getElementById("followBtn");
   const requestBtn = document.getElementById("requestAccessBtn");
 
-  /* 🔒 UNIVERSAL RESET (CRITICAL) */
+  /* ========== UNIVERSAL RESET (IMPORTANT) ========== */
   nameInput.disabled = true;
   bio.disabled = true;
 
@@ -109,6 +112,7 @@ async function loadProfile() {
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
   requestBtn.style.display = "none";
+
   postsSection.style.display = "block";
 
   /* BASIC DATA */
@@ -128,6 +132,7 @@ async function loadProfile() {
     postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
+
     requestBtn.style.display = "inline-block";
     requestBtn.onclick = requestPersonalAccess;
 
@@ -140,7 +145,10 @@ async function loadProfile() {
   if (!isOwner) {
     followBtn.style.display = "inline-block";
     followBtn.innerText = isFollower ? "Unfollow" : "Follow";
-    if (!isPrivate || isFollower) chatBtn.style.display = "inline-block";
+
+    if (!isPrivate || isFollower) {
+      chatBtn.style.display = "inline-block";
+    }
   }
 
   /* POSTS */
@@ -150,6 +158,7 @@ async function loadProfile() {
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
     div.style.marginBottom = "10px";
+
     div.innerHTML = `
       <p>${p.content || ""}</p>
       ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
@@ -162,10 +171,66 @@ async function loadProfile() {
 }
 
 /* ======================
+   PERSONAL POSTS
+====================== */
+async function loadPersonalPosts({ isOwner }) {
+  const container = document.getElementById("personalPosts");
+  if (!container) return;
+
+  let hasAccess = isOwner;
+
+  if (!isOwner) {
+    const res = await fetch(
+      API + "/api/personal-access/status/" + profileUserId,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    const data = await res.json();
+    hasAccess = data.status === "approved";
+  }
+
+  if (!hasAccess) {
+    container.innerHTML = `
+      <p style="color:#888">🔒 Personal posts are private</p>
+      <button onclick="requestPersonalAccess()">Request Access</button>
+    `;
+    return;
+  }
+
+  const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const list = await res.json();
+
+  container.innerHTML = "";
+  if (!list.length) {
+    container.innerHTML = "<p style='color:#888'>No personal posts</p>";
+    return;
+  }
+
+  list.forEach(p => {
+    const div = document.createElement("div");
+    div.style.border = "1px dashed #aaa";
+    div.style.padding = "8px";
+    div.style.marginBottom = "8px";
+
+    div.innerHTML = `
+      <p>${p.content || ""}</p>
+      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
+      <div style="font-size:12px;color:#666">
+        ${new Date(p.createdAt).toLocaleString()}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+/* ======================
    EDIT / SAVE PROFILE
 ====================== */
 function enableProfileEdit() {
   if (profileUserId !== myId) return;
+
   document.getElementById("nameInput").disabled = false;
   document.getElementById("bio").disabled = false;
   document.getElementById("saveBtn").style.display = "inline-block";
@@ -182,6 +247,7 @@ async function updateProfile() {
   if (file) {
     const fd = new FormData();
     fd.append("image", file);
+
     const up = await fetch(API + "/api/media/image", {
       method: "POST",
       headers: { Authorization: "Bearer " + token },
@@ -197,13 +263,42 @@ async function updateProfile() {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({ name: nameText, bio: bioText, profilePic: profilePicUrl })
+    body: JSON.stringify({
+      name: nameText,
+      bio: bioText,
+      profilePic: profilePicUrl
+    })
   });
 
   const data = await res.json();
   if (!res.ok) return alert(data.msg || "Profile update failed");
 
   loadProfile();
+}
+
+/* ======================
+   FOLLOW / CHAT
+====================== */
+async function toggleFollow() {
+  await fetch(API + "/api/users/follow/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadProfile();
+}
+
+function openDM() {
+  location.href = "chat.html?userId=" + profileUserId;
+}
+
+async function requestPersonalAccess() {
+  const btn = document.getElementById("requestAccessBtn");
+  await fetch(API + "/api/personal-access/request/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  btn.innerText = "⏳ Request Pending";
+  btn.disabled = true;
 }
 
 /* ======================
