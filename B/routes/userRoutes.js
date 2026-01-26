@@ -122,39 +122,19 @@ router.get("/profile/:id", auth, async (req, res) => {
 router.put("/profile", auth, async (req, res) => {
   try {
     const { name, bio, profilePic } = req.body;
+
     const update = {};
 
-    // ✅ NAME VALIDATION (NO UNIQUE CHECK)
     if (name !== undefined) {
       const cleanName = name.trim();
-
-      // length check
       if (cleanName.length < 2 || cleanName.length > 30) {
-        return res.status(400).json({
-          msg: "Name must be between 2 and 30 characters"
-        });
+        return res.status(400).json({ msg: "Name must be 2–30 chars" });
       }
-
-      // character check (letters + space only)
-      const nameRegex = /^[a-zA-Z ]+$/;
-      if (!nameRegex.test(cleanName)) {
-        return res.status(400).json({
-          msg: "Name can contain only letters and spaces"
-        });
-      }
-
       update.name = cleanName;
     }
 
-    // ✅ BIO (empty allowed)
-    if (bio !== undefined) {
-      update.bio = bio;
-    }
-
-    // ✅ PROFILE PIC
-    if (profilePic) {
-      update.profilePic = profilePic;
-    }
+    if (bio !== undefined) update.bio = bio;
+    if (profilePic) update.profilePic = profilePic;
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -162,22 +142,17 @@ router.put("/profile", auth, async (req, res) => {
       { new: true }
     );
 
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-
-    res.json({
-      ok: true,
-      user: {
-        _id: user._id,
-        name: user.name,
-        bio: user.bio,
-        profilePic: user.profilePic
-      }
+    // 🔥 REAL-TIME EMIT (FIXED)
+    const io = getIO();
+    io.to(req.user.id.toString()).emit("profile-updated", {
+      userId: req.user.id,          // ✅ THIS WAS MISSING
+      name: user.name,
+      bio: user.bio,
+      profilePic: user.profilePic
     });
 
-  } catch (err) {
-    console.error("Profile update error:", err);
+    res.json({ ok: true, user });
+  } catch (e) {
     res.status(500).json({ msg: "Profile update failed" });
   }
 });

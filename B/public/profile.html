@@ -8,38 +8,81 @@
 
 <h3 id="profileTitle">Profile</h3>
 
-<!-- PROFILE PIC -->
-<img id="profilePic" width="120" style="display:block;margin-bottom:10px" />
-<input type="file" id="profilePicInput" accept="image/*" />
-<br><br>
+<!-- ================= PROFILE PIC ================= -->
+<img
+  id="profilePic"
+  width="120"
+  style="display:block;margin-bottom:10px"
+/>
 
+<input
+  type="file"
+  id="profilePicInput"
+  accept="image/*"
+  style="display:none"
+/>
+
+<br>
+
+<!-- ================= NAME ================= -->
 <input
   id="nameInput"
   placeholder="Your name"
   style="width:100%;margin-bottom:6px"
-/><br><br>
+  disabled
+/>
 
-<!-- BIO -->
-<input id="bio" placeholder="Your bio" />
+<button
+  id="editProfileBtn"
+  onclick="enableProfileEdit()"
+>
+  ✏️ Edit
+</button>
+
+<button
+  id="saveBtn"
+  onclick="updateProfile()"
+  style="display:none"
+>
+  💾 Save
+</button>
+
 <br><br>
 
-<!-- FOLLOW COUNTS -->
+<!-- ================= BIO ================= -->
+<textarea
+  id="bio"
+  placeholder="Your bio"
+  style="width:100%;height:60px"
+  disabled
+></textarea>
+
+<br><br>
+
+<!-- ================= FOLLOW COUNTS ================= -->
 Followers:
-<span id="followersCount" onclick="openFollowers()" style="cursor:pointer;color:blue">0</span>
+<span
+  id="followersCount"
+  onclick="openFollowers()"
+  style="cursor:pointer;color:blue"
+>0</span>
 |
 Following:
-<span id="followingCount" onclick="openFollowing()" style="cursor:pointer;color:blue">0</span>
+<span
+  id="followingCount"
+  onclick="openFollowing()"
+  style="cursor:pointer;color:blue"
+>0</span>
 
 <br><br>
 
-<!-- ACTION BUTTONS -->
-<button id="saveBtn" onclick="updateProfile()">Save</button>
+<!-- ================= ACTION BUTTONS ================= -->
 <button id="chatBtn" onclick="openDM()">Chat</button>
 <button id="followBtn" onclick="toggleFollow()">Follow</button>
 
 <hr>
 
-<!-- PUBLIC POSTS -->
+<!-- ================= PUBLIC POSTS ================= -->
 <div id="postsSection">
   <h4>Posts</h4>
   <div id="posts"></div>
@@ -47,83 +90,105 @@ Following:
 
 <hr>
 
-<!-- PERSONAL POST CREATE (OWNER ONLY) -->
-<div id="personalPostBox" style="display:none;margin-bottom:10px">
+<!-- ================= PERSONAL POST CREATE ================= -->
+<div
+  id="personalPostBox"
+  style="display:none;margin-bottom:10px"
+>
   <textarea
     id="personalPostText"
     placeholder="Write a personal post..."
     style="width:100%;height:80px"
   ></textarea>
 
-  <input type="file" id="personalPostMedia" accept="image/*,video/*" />
+  <input
+    type="file"
+    id="personalPostMedia"
+    accept="image/*,video/*"
+  />
 
   <br><br>
-  <button onclick="createPersonalPost()">Post (Private)</button>
+  <button onclick="createPersonalPost()">
+    Post (Private)
+  </button>
 </div>
 
-<!-- 🔔 PERSONAL ACCESS REQUESTS (OWNER ONLY) -->
-<div id="personalAccessRequests" style="display:none;margin-bottom:15px">
+<!-- ================= PERSONAL ACCESS ================= -->
+<div
+  id="personalAccessRequests"
+  style="display:none;margin-bottom:15px"
+>
   <h4>🔐 Personal Access Requests</h4>
   <div id="accessRequestList"></div>
 </div>
 
-<!-- PERSONAL POSTS HEADER -->
 <h4>🔒 Personal Posts</h4>
 
-<!-- REQUEST ACCESS (VISITOR ONLY) -->
-<button id="requestAccessBtn" style="display:none">
+<button
+  id="requestAccessBtn"
+  style="display:none"
+>
   Request Personal Access
 </button>
 
-<!-- PERSONAL POSTS LIST -->
 <div id="personalPosts" style="margin-top:10px"></div>
 
-<!-- FOLLOW LIST MODAL -->
-<div id="followModal" style="
-  display:none;
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,0.6);
-  z-index:9999;
-">
-  <div style="
-    background:#fff;
-    max-width:400px;
-    margin:60px auto;
-    padding:15px;
-    border-radius:6px;
-  ">
+<!-- ================= FOLLOW LIST MODAL ================= -->
+<div
+  id="followModal"
+  style="
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.6);
+    z-index:9999;
+  "
+>
+  <div
+    style="
+      background:#fff;
+      max-width:400px;
+      margin:60px auto;
+      padding:15px;
+      border-radius:6px;
+    "
+  >
     <h4 id="modalTitle"></h4>
     <div id="modalList"></div>
     <button onclick="closeModal()">Close</button>
   </div>
 </div>
-<!-- UPLOAD PROGRESS OVERLAY -->
-<div id="uploadOverlay" style="
-  display:none;
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,0.5);
-  z-index:99999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    border:10px solid #ddd;
-    border-top:10px solid #4caf50;
-    animation:spin 1s linear infinite;
-    display:flex;
+
+<!-- ================= UPLOAD PROGRESS ================= -->
+<div
+  id="uploadOverlay"
+  style="
+    display:none;
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.5);
+    z-index:99999;
     align-items:center;
     justify-content:center;
-    font-size:20px;
-    color:#000;
-    background:#fff;
-  ">
+  "
+>
+  <div
+    style="
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      border:10px solid #ddd;
+      border-top:10px solid #4caf50;
+      animation:spin 1s linear infinite;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      background:#fff;
+    "
+  >
     <span id="uploadPercent">0%</span>
   </div>
 </div>
@@ -134,6 +199,7 @@ Following:
   100% { transform: rotate(360deg); }
 }
 </style>
+
 <script src="profile.js"></script>
 </body>
 </html>

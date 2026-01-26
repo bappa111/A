@@ -123,12 +123,6 @@ async function loadProfile() {
     nameInput.value = data.user.name || "";
     nameInput.disabled = !isOwner;
   }
-// 🔒 always lock inputs by default
-if (isOwner) {
-  nameInput.disabled = true;
-  bio.disabled = true;
-  saveBtn.style.display = "none";
-}
 
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
@@ -144,7 +138,7 @@ if (isOwner) {
 
     if (isOwner) {
     saveBtn.style.display = "none"; // default hidden
-
+  }
     picInput.style.display = "inline-block";
     personalBox.style.display = "block";
   }
@@ -380,8 +374,6 @@ function enableProfileEdit() {
   nameInput.focus();
   saveBtn.style.display = "inline-block";
 }
-
-
 async function updateProfile() {
   if (profileUserId !== myId) return;
 
@@ -425,18 +417,15 @@ async function updateProfile() {
     return;
   }
 
-  // 🔄 reload profile data
   loadProfile();
-
-  // 🔒 lock inputs again (✅ THIS IS THE RIGHT PLACE)
-  document.getElementById("nameInput").disabled = true;
-  document.getElementById("bio").disabled = true;
-  document.getElementById("saveBtn").style.display = "none";
 }
 
+// 🔒 lock inputs again
+document.getElementById("nameInput").disabled = true;
+document.getElementById("bio").disabled = true;
+document.getElementById("saveBtn").style.display = "none";
 function openDM() {
-  location.href = "chat.html?userId=" + profileUserId;
-}
+  locat
 
 async function requestPersonalAccess() {
   const btn = document.getElementById("requestAccessBtn");
