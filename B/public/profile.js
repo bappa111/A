@@ -400,6 +400,24 @@ async function requestPersonalAccess() {
   btn.innerText = "⏳ Request Pending";
   btn.disabled = true;
 }
+/*back button*/
+/* ======================
+   FULL SCREEN PROFILE PIC
+====================== */
+function openFullPic() {
+  const img = document.getElementById("profilePic");
+  const fullImg = document.getElementById("fullPicImg");
+  const overlay = document.getElementById("fullPicOverlay");
+
+  if (!img || !img.src) return;
+
+  fullImg.src = img.src;
+  overlay.style.display = "block";
+}
+
+function closeFullPic() {
+  document.getElementById("fullPicOverlay").style.display = "none";
+}
 
 /* ======================
    INIT

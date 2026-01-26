@@ -12,7 +12,8 @@
 <img
   id="profilePic"
   width="120"
-  style="display:block;margin-bottom:10px"
+  style="cursor:pointer"
+  onclick="openFullPic()"
 />
 
 <!-- FULLSCREEN PROFILE PIC MODAL -->
@@ -240,7 +241,46 @@ Following:
   100% { transform: rotate(360deg); }
 }
 </style>
+<!-- ================= FULL SCREEN PROFILE PIC ================= -->
+<div
+  id="fullPicOverlay"
+  style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:#000;
+    z-index:999999;
+  "
+>
+  <!-- Back button -->
+  <button
+    onclick="closeFullPic()"
+    style="
+      position:absolute;
+      top:15px; left:15px;
+      background:rgba(0,0,0,0.6);
+      color:#fff;
+      border:none;
+      font-size:22px;
+      padding:8px 12px;
+      border-radius:50%;
+      cursor:pointer;
+    "
+  >
+    ←
+  </button>
 
+  <!-- Image -->
+  <img
+    id="fullPicImg"
+    style="
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    "
+  />
+</div>
 <script src="profile.js"></script>
 </body>
 </html>
