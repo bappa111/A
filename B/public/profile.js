@@ -119,6 +119,11 @@ async function loadProfile() {
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   nameInput.value = data.user.name || "";
   bio.value = data.user.bio || "";
+  document.getElementById("followersCount").innerText =
+    data.user.followersCount ?? data.user.followers.length;
+
+  document.getElementById("followingCount").innerText =
+    data.user.followingCount ?? data.user.following.length;
 
   /* OWNER UI */
   if (isOwner) {
