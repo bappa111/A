@@ -256,6 +256,7 @@ async function updateProfile() {
     const d = await up.json();
     profilePicUrl = d.imageUrl;
   }
+    console.log("PROFILE PIC URL:", profilePicUrl);
 
   const res = await fetch(API + "/api/users/profile", {
     method: "PUT",
