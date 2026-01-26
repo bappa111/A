@@ -9,6 +9,7 @@ if (!token) {
 /* ======================
    STATE
 ====================== */
+let currentUploadXHR = null;
 let page = 1;
 let loading = false;
 let noMorePosts = false;
@@ -443,16 +444,54 @@ document.addEventListener("click", e => {
 
 function uploadWithProgress({ url, file, field }) {
   return new Promise((resolve, reject) => {
+
+const previewBox = document.getElementById("uploadPreview");
+const previewImg = document.getElementById("uploadPreviewImg");
+const previewVideo = document.getElementById("uploadPreviewVideo");
+
+previewBox.style.display = "block";
+previewImg.style.display = "none";
+previewVideo.style.display = "none";
+
+const localUrl = URL.createObjectURL(file);
+
+if (file.type.startsWith("image")) {
+  previewImg.src = localUrl;
+  previewImg.style.display = "block";
+}
+
+if (file.type.startsWith("video")) {
+  previewVideo.src = localUrl;
+  previewVideo.style.display = "block";
+}
+
     const overlay = document.getElementById("uploadOverlay");
     const percentText = document.getElementById("uploadPercent");
 
     overlay.style.display = "flex";
+    const cancelBtn = document.getElementById("uploadCancelBtn");
+
+    cancelBtn.onclick = () => {
+      if (currentUploadXHR) {
+        currentUploadXHR.abort(); // 🛑 STOP UPLOAD
+        currentUploadXHR = null;
+      }
+
+      overlay.style.display = "none";
+      percentText.innerText = "0%";
+
+      alert("Upload cancelled");
+    };
     percentText.innerText = "0%";
 
     const xhr = new XMLHttpRequest();
+    currentUploadXHR = xhr; // ✅ IMPORTANT
     const fd = new FormData();
     fd.append(field, file);
-
+    xhr.onabort = () => {
+      overlay.style.display = "none";
+      percentText.innerText = "0%";
+    };
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
         const percent = Math.round((e.loaded / e.total) * 100);
@@ -462,6 +501,10 @@ function uploadWithProgress({ url, file, field }) {
 
     xhr.onload = () => {
       overlay.style.display = "none";
+// ✅ PREVIEW RESET (HERE)
+  previewBox.style.display = "none";
+  previewImg.src = "";
+  previewVideo.src = "";
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(JSON.parse(xhr.responseText));
       } else {

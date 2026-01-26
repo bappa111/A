@@ -10,18 +10,19 @@
   .pd-item:hover {
     background:#f2f2f2;
   }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 
+<!-- SEARCH -->
 <div style="position:relative;margin:10px 0">
-  <input id="userSearch"
-         placeholder="Search users..."
-         style="width:100%;padding:8px">
-
+  <input id="userSearch" placeholder="Search users..." style="width:100%;padding:8px">
   <div id="searchResults"
-       style="position:absolute;top:38px;left:0;
-              width:100%;background:#fff;
-              border:1px solid #ccc;
-              z-index:100;display:none">
+       style="position:absolute;top:38px;left:0;width:100%;background:#fff;
+              border:1px solid #ccc;z-index:100;display:none">
   </div>
 </div>
 
@@ -29,7 +30,6 @@
 <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #ccc;">
   <h3>Feed</h3>
 
-  <!-- PROFILE DROPDOWN -->
   <div style="position:relative;">
     <img
       id="profileMenuBtn"
@@ -39,18 +39,9 @@
 
     <div
       id="profileDropdown"
-      style="
-        display:none;
-        position:absolute;
-        right:0;
-        top:45px;
-        background:#fff;
-        border:1px solid #ccc;
-        border-radius:6px;
-        min-width:160px;
-        box-shadow:0 4px 10px rgba(0,0,0,0.15);
-        z-index:1000;
-      "
+      style="display:none;position:absolute;right:0;top:45px;background:#fff;
+             border:1px solid #ccc;border-radius:6px;min-width:160px;
+             box-shadow:0 4px 10px rgba(0,0,0,0.15);z-index:1000;"
     >
       <div class="pd-item" onclick="goMyProfile()">👤 My Profile</div>
       <div class="pd-item">⚙️ Settings</div>
@@ -60,81 +51,69 @@
   </div>
 </div>
 
-<!-- 🔝 TOP BAR -->
+<!-- TOP BAR -->
 <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #ccc">
   <b>MyApp</b>
   <div>
     <button onclick="alert('Calling coming soon')">📞</button>
-    <button onclick="location.href='chat.html'">💬</button>  </div>
+    <button onclick="location.href='chat.html'">💬</button>
+  </div>
 </div>
 
+<!-- NOTIFICATION -->
 <a href="notifications.html" style="position:relative">
   🔔
-  <span
-    id="notifCount"
-    style="
-      position:absolute;
-      top:-5px;
-      right:-8px;
-      background:red;
-      color:white;
-      font-size:12px;
-      padding:2px 6px;
-      border-radius:50%;
-    "
-  >0</span>
+  <span id="notifCount"
+        style="position:absolute;top:-5px;right:-8px;background:red;color:white;
+               font-size:12px;padding:2px 6px;border-radius:50%;">0</span>
 </a>
 
+<!-- CREATE POST -->
 <textarea id="postText" placeholder="What's on your mind?"></textarea><br>
-
 <input type="file" id="postImage" accept="image/*"><br>
 <input type="file" id="postVideo" accept="video/*"><br>
-
 <button onclick="createPost()">Post</button>
 
 <hr>
 
+<!-- FEED -->
 <div id="feed"></div>
 
-<!-- UPLOAD PROGRESS OVERLAY -->
-<div id="uploadOverlay" style="
-  display:none;
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,0.5);
-  z-index:99999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    border:10px solid #ddd;
-    border-top:10px solid #4caf50;
-    animation:spin 1s linear infinite;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:20px;
-    background:#fff;
-  ">
-    <span id="uploadPercent">0%</span>
+<!-- MINI UPLOAD INDICATOR (BOTTOM RIGHT) -->
+<div id="uploadOverlay"
+     style="display:none;position:fixed;bottom:20px;right:20px;z-index:99999;">
+  <div style="display:flex;gap:8px;align-items:center;padding:8px;background:#fff;
+              border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,.3);
+              position:relative;">
+
+    <!-- PREVIEW -->
+    <div id="uploadPreview"
+         style="width:48px;height:48px;border-radius:6px;overflow:hidden;
+                background:#eee;display:none;">
+      <img id="uploadPreviewImg"
+           style="width:100%;height:100%;object-fit:cover;display:none">
+      <video id="uploadPreviewVideo"
+             style="width:100%;height:100%;object-fit:cover;display:none"
+             muted></video>
+    </div>
+
+    <!-- PROGRESS -->
+    <div style="width:44px;height:44px;border-radius:50%;border:5px solid #ddd;
+                border-top:5px solid #4caf50;animation:spin 1s linear infinite;
+                display:flex;align-items:center;justify-content:center;font-size:11px;">
+      <span id="uploadPercent">0%</span>
+    </div>
+
+    <!-- CANCEL -->
+    <button id="uploadCancelBtn"
+      style="position:absolute;top:-8px;right:-8px;width:22px;height:22px;
+             background:#f44336;color:#fff;border:none;border-radius:50%;
+             cursor:pointer;font-size:12px;">✕</button>
   </div>
 </div>
 
-<style>
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-</style>
-
-<!-- SOCKET.IO FIRST -->
+<!-- SOCKET -->
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-
-<!-- THEN YOUR JS -->
 <script src="feed.js"></script>
 
 </body>
