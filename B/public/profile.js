@@ -236,6 +236,7 @@ function enableProfileEdit() {
   document.getElementById("saveBtn").style.display = "inline-block";
 }
 
+/*upload profile*/
 async function updateProfile() {
   if (profileUserId !== myId) return;
 
@@ -244,6 +245,7 @@ async function updateProfile() {
   const file = document.getElementById("profilePicInput").files[0];
 
   let profilePicUrl = null;
+
   if (file) {
     const fd = new FormData();
     fd.append("image", file);
@@ -253,10 +255,10 @@ async function updateProfile() {
       headers: { Authorization: "Bearer " + token },
       body: fd
     });
+
     const d = await up.json();
     profilePicUrl = d.imageUrl;
   }
-    alert(profilePicUrl);
 
   const res = await fetch(API + "/api/users/profile", {
     method: "PUT",
@@ -273,6 +275,11 @@ async function updateProfile() {
 
   const data = await res.json();
   if (!res.ok) return alert(data.msg || "Profile update failed");
+
+  // 🔥 THIS IS THE FIX (RIGHT PLACE)
+  if (profilePicUrl) {
+    document.getElementById("profilePic").src = profilePicUrl;
+  }
 
   loadProfile();
 }
