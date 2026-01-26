@@ -88,10 +88,7 @@ router.get("/profile/:id", auth, async (req, res) => {
         .sort({ createdAt: -1 });
     }
 
-    let profilePic = user.profilePic;
-    if (profilePic && !profilePic.startsWith("http")) {
-      profilePic = `${req.protocol}://${req.get("host")}${profilePic}`;
-    }
+    const profilePic = user.profilePic;
 
     res.json({
       user: {
@@ -124,7 +121,13 @@ router.put("/profile", auth, async (req, res) => {
     }
 
     if (bio !== undefined) update.bio = bio;
-    if (profilePic) update.profilePic = profilePic;
+    if (profilePic) {
+    if (profilePic.startsWith("http")) {
+      update.profilePic = profilePic;
+    } else {
+    update.profilePic = `${req.protocol}://${req.get("host")}${profilePic}`;
+    }
+  }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
