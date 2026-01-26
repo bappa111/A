@@ -117,6 +117,8 @@ async function loadProfile() {
 
   /* BASIC DATA */
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
+  img.onclick = openProfilePic;
+  img.style.cursor = "pointer";
   nameInput.value = data.user.name || "";
   bio.value = data.user.bio || "";
   document.getElementById("followersCount").innerText =
@@ -302,6 +304,22 @@ async function toggleFollow() {
 
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
+}
+/*full screen pic*/
+function openProfilePic() {
+  const img = document.getElementById("profilePic");
+  const modal = document.getElementById("profilePicModal");
+  const full = document.getElementById("profilePicFull");
+
+  if (!img || !img.src) return;
+
+  full.src = img.src;
+  modal.style.display = "flex";
+}
+
+function closeProfilePic() {
+  const modal = document.getElementById("profilePicModal");
+  modal.style.display = "none";
 }
 // ... উপরের সব code
 
