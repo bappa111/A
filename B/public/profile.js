@@ -77,6 +77,7 @@ async function loadProfile() {
 
   const img = document.getElementById("profilePic");
   const bio = document.getElementById("bio");
+  const nameInput = document.getElementById("nameInput");
   const postsSection = document.getElementById("postsSection");
   const posts = document.getElementById("posts");
   const chatBtn = document.getElementById("chatBtn");
@@ -97,6 +98,10 @@ async function loadProfile() {
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   bio.value = data.user.bio || "";
   bio.disabled = !isOwner;
+  if (nameInput) {
+    nameInput.value = data.user.name || "";
+    nameInput.disabled = !isOwner;
+  }
 
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
@@ -340,29 +345,45 @@ async function toggleFollow() {
 async function updateProfile() {
   if (profileUserId !== myId) return;
 
+  const nameText = document.getElementById("nameInput").value.trim();
   const bioText = document.getElementById("bio").value.trim();
   const file = document.getElementById("profilePicInput").files[0];
+
   let profilePicUrl = null;
 
   if (file) {
     const fd = new FormData();
     fd.append("image", file);
+
     const up = await fetch(API + "/api/media/image", {
       method: "POST",
+      headers: { Authorization: "Bearer " + token },
       body: fd
     });
+
     const d = await up.json();
     profilePicUrl = d.imageUrl;
   }
 
-  await fetch(API + "/api/users/profile", {
+  const res = await fetch(API + "/api/users/profile", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({ bio: bioText, profilePic: profilePicUrl })
+    body: JSON.stringify({
+      name: nameText,
+      bio: bioText,
+      profilePic: profilePicUrl
+    })
   });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    alert(data.msg || "Profile update failed");
+    return;
+  }
 
   loadProfile();
 }

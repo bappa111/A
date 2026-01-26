@@ -120,19 +120,66 @@ router.get("/profile/:id", auth, async (req, res) => {
    UPDATE OWN PROFILE
 ====================== */
 router.put("/profile", auth, async (req, res) => {
-  const { bio, profilePic, isPrivate } = req.body;
-  const user = await User.findById(req.user.id);
+  try {
+    const { name, bio, profilePic } = req.body;
+    const update = {};
 
-  if (!user) {
-    return res.status(404).json({ msg: "User not found" });
+    // ✅ NAME VALIDATION (NO UNIQUE CHECK)
+    if (name !== undefined) {
+      const cleanName = name.trim();
+
+      // length check
+      if (cleanName.length < 2 || cleanName.length > 30) {
+        return res.status(400).json({
+          msg: "Name must be between 2 and 30 characters"
+        });
+      }
+
+      // character check (letters + space only)
+      const nameRegex = /^[a-zA-Z ]+$/;
+      if (!nameRegex.test(cleanName)) {
+        return res.status(400).json({
+          msg: "Name can contain only letters and spaces"
+        });
+      }
+
+      update.name = cleanName;
+    }
+
+    // ✅ BIO (empty allowed)
+    if (bio !== undefined) {
+      update.bio = bio;
+    }
+
+    // ✅ PROFILE PIC
+    if (profilePic) {
+      update.profilePic = profilePic;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      update,
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    res.json({
+      ok: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        bio: user.bio,
+        profilePic: user.profilePic
+      }
+    });
+
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ msg: "Profile update failed" });
   }
-
-  if (bio !== undefined) user.bio = bio;
-  if (profilePic !== undefined) user.profilePic = profilePic;
-  if (isPrivate !== undefined) user.isPrivate = isPrivate;
-
-  await user.save();
-  res.json({ msg: "Profile updated", user });
 });
 
 /* ======================
