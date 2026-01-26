@@ -42,15 +42,23 @@ router.get("/:ownerId", auth, async (req, res) => {
     const ownerId = req.params.ownerId;
     const me = req.user.id;
 
-    const posts = await PersonalPost.find({
-      owner: ownerId,
-      $or: [
-        { owner: ownerId },     // ✅ owner always allowed
-        { allowedUsers: me }    // approved users
-      ]
-    })
-    .sort({ createdAt: -1 })
-    .lean();
+    let query;
+
+    // ✅ OWNER → সব personal post
+    if (me === ownerId) {
+      query = { owner: ownerId };
+    } 
+    // ✅ APPROVED USER → allowedUsers check
+    else {
+      query = {
+        owner: ownerId,
+        allowedUsers: me
+      };
+    }
+
+    const posts = await PersonalPost.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(posts);
   } catch (e) {
