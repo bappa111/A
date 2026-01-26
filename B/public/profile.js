@@ -305,7 +305,6 @@ async function toggleFollow() {
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
 }
-/*full screen pic*/
 /* ======================
    FULL SCREEN PROFILE PIC
 ====================== */
