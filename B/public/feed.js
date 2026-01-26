@@ -176,11 +176,14 @@ async function loadFeed() {
     if (!p.userId) return;
 
     const div = document.createElement("div");
-    div.style.border = "1px solid #ccc";
+
     div.style.width = "100%";
     div.style.boxSizing = "border-box";
-    div.style.padding = "8px";
-    div.style.marginBottom = "12px";
+    div.style.background = "#fff";
+    div.style.borderRadius = "10px";
+    div.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
+    div.style.padding = "12px";
+    div.style.marginBottom = "16px";
 
     div.innerHTML = `
 <div style="display:flex;justify-content:space-between;align-items:center">
@@ -215,29 +218,30 @@ ${p.followedBy?.length ? `
   Followed by ${p.followedBy.filter(Boolean).join(", ")}
 </div>` : ""}
 
-<p>${p.content || ""}</p>
+<p style="font-size:15px;line-height:1.4;margin:8px 0">
+  ${p.content || ""}
+</p>
 <div style="font-size:12px;color:#888">${timeAgo(p.createdAt)}</div>
 
 ${p.image ? `
   <div style="width:100%;margin-top:6px">
     <img src="${p.image}"
-         style="width:100%;height:auto;display:block;border-radius:6px">
+     style="width:100%;border-radius:8px;margin-top:8px">
   </div>
 ` : ""}
 ${p.video ? `
   <div style="width:100%;margin-top:6px">
     <video controls
-           style="width:100%;height:auto;display:block;border-radius:6px">
+       style="width:100%;border-radius:8px;margin-top:8px;background:#000">
       <source src="${p.video}">
     </video>
   </div>
 ` : ""}
 
-<button onclick="toggleLike('${p._id}')">👍 Like (${p.likes?.length || 0})</button>
-
-<button onclick="sharePost('${p._id}')">
-  🔗 Share
-</button>
+<div style="display:flex;gap:12px;margin-top:8px">
+  <button onclick="toggleLike('${p._id}')">👍 Like (${p.likes?.length || 0})</button>
+  <button onclick="sharePost('${p._id}')">🔗 Share</button>
+</div>
 
 ${(p.comments || []).map(c => `
   <div style="margin-left:10px">
