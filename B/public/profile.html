@@ -16,45 +16,7 @@
   onclick="openFullPic()"
 />
 
-<!-- FULLSCREEN PROFILE PIC MODAL -->
-<div
-  id="profilePicModal"
-  style="
-    display:none;
-    position:fixed;
-    top:0; left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.9);
-    z-index:99999;
-    align-items:center;
-    justify-content:center;
-  "
-  onclick="closeProfilePic()"
->
-  <img
-    id="profilePicFull"
-    style="max-width:95%;max-height:95%;border-radius:6px"
-  />
-<button
-  id="downloadProfilePicBtn"
-  style="
-    position:absolute;
-    bottom:20px;
-    right:20px;
-    padding:10px 14px;
-    font-size:14px;
-    border:none;
-    border-radius:6px;
-    background:#4caf50;
-    color:#fff;
-    cursor:pointer;
-  "
-  onclick="downloadProfilePic(event)"
->
-  ⬇️ Download
-</button>
-</div>
+
 
 <input
   type="file"
@@ -262,13 +224,13 @@ Following:
       background:rgba(0,0,0,0.6);
       color:#fff;
       border:none;
-      font-size:22px;
-      padding:8px 12px;
+      font-size:10px;
+      padding:5px 8px;
       border-radius:50%;
       cursor:pointer;
     "
   >
-    ←
+    ⬅️
   </button>
 
   <!-- Image -->

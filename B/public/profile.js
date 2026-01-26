@@ -117,7 +117,7 @@ async function loadProfile() {
 
   /* BASIC DATA */
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
-  img.onclick = openProfilePic;
+  img.onclick = openFullPic;
   img.style.cursor = "pointer";
   nameInput.value = data.user.name || "";
   bio.value = data.user.bio || "";
@@ -324,14 +324,17 @@ function closeFullPic() {
 }
 /*pic download*/
 function downloadProfilePic(e) {
-  e.stopPropagation(); // modal close prevent
+  e.stopPropagation();
 
-  const img = document.getElementById("profilePicFull");
+  const img = document.getElementById("fullPicImg");
   if (!img || !img.src) return;
 
   const a = document.createElement("a");
   a.href = img.src;
-  a.download = "profile-picture.jpg";
+  a.download =
+    (document.getElementById("profileTitle")?.innerText || "profile") +
+    ".jpg";
+
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
