@@ -89,41 +89,40 @@ socket.on("notification", () => {
    CREATE POST
 ====================== */
 async function createPost() {
-  const postText = document.getElementById("postText");
-  const postImage = document.getElementById("postImage");
-  const postVideo = document.getElementById("postVideo");
+  try {
+    const postText = document.getElementById("postText");
+    const postImage = document.getElementById("postImage");
+    const postVideo = document.getElementById("postVideo");
 
-  const text = postText.value.trim();
-  const img = postImage.files[0];
-  const vid = postVideo.files[0];
+    const text = postText.value.trim();
+    const img = postImage.files[0];
+    const vid = postVideo.files[0];
 
-  if (!text && !img && !vid) {
-    alert("Write something or select image/video");
-    return;
-  }
+    if (!text && !img && !vid) {
+      alert("Write something or select image/video");
+      return;
+    }
 
-  let image = null;
-  let video = null;
+    let image = null;
+    let video = null;
 
-  if (document.getElementById("postImage").files[0]) {
-    const file = document.getElementById("postImage").files[0];
-    const res = await uploadWithProgress({
-      url: API + "/api/media/image",
-      file,
-      field: "image"
-    });
-    image = res.imageUrl;
-  }
+    if (img) {
+      const res = await uploadWithProgress({
+        url: API + "/api/media/image",
+        file: img,
+        field: "image"
+      });
+      image = res.imageUrl;
+    }
 
-  if (document.getElementById("postVideo").files[0]) {
-    const file = document.getElementById("postVideo").files[0];
-    const res = await uploadWithProgress({
-      url: API + "/api/media/video",
-      file,
-      field: "video"
-    });
-    video = res.videoUrl;
-  }
+    if (vid) {
+      const res = await uploadWithProgress({
+        url: API + "/api/media/video",
+        file: vid,
+        field: "video"
+      });
+      video = res.videoUrl;
+    }
 
     await fetch(API + "/api/posts", {
       method: "POST",
@@ -140,6 +139,7 @@ async function createPost() {
 
     resetFeed();
     loadFeed();
+
   } catch (e) {
     alert("Post failed");
     console.error(e);
