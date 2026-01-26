@@ -105,28 +105,25 @@ async function createPost() {
   let image = null;
   let video = null;
 
-  try {
-    if (img) {
-      const fd = new FormData();
-      fd.append("image", img);
-      const r = await fetch(API + "/api/media/image", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-        body: fd
-      });
-      image = (await r.json()).imageUrl || null;
-    }
+  if (document.getElementById("postImage").files[0]) {
+    const file = document.getElementById("postImage").files[0];
+    const res = await uploadWithProgress({
+      url: API + "/api/media/image",
+      file,
+      field: "image"
+    });
+    image = res.imageUrl;
+  }
 
-    if (vid) {
-      const fd = new FormData();
-      fd.append("video", vid);
-      const r = await fetch(API + "/api/media/video", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-        body: fd
-      });
-      video = (await r.json()).videoUrl || null;
-    }
+  if (document.getElementById("postVideo").files[0]) {
+    const file = document.getElementById("postVideo").files[0];
+    const res = await uploadWithProgress({
+      url: API + "/api/media/video",
+      file,
+      field: "video"
+    });
+    video = res.videoUrl;
+  }
 
     await fetch(API + "/api/posts", {
       method: "POST",
@@ -438,3 +435,45 @@ document.addEventListener("click", e => {
   if (!e.target.closest("button"))
     document.querySelectorAll("[id^='menu-']").forEach(m => m.style.display = "none");
 });
+
+
+function uploadWithProgress({ url, file, field }) {
+  return new Promise((resolve, reject) => {
+    const overlay = document.getElementById("uploadOverlay");
+    const percentText = document.getElementById("uploadPercent");
+
+    overlay.style.display = "flex";
+    percentText.innerText = "0%";
+
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append(field, file);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        percentText.innerText = percent + "%";
+      }
+    };
+
+    xhr.onload = () => {
+      overlay.style.display = "none";
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        alert("Upload failed");
+        reject();
+      }
+    };
+
+    xhr.onerror = () => {
+      overlay.style.display = "none";
+      alert("Upload error");
+      reject();
+    };
+
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.send(fd);
+  });
+}

@@ -291,3 +291,102 @@ if (token && location.pathname.includes("chat.html")) {
     loadUsers();     // ✅ থাকবে
   }
 }
+
+
+function uploadWithProgress({ url, file, field }) {
+  return new Promise((resolve, reject) => {
+    const overlay = document.getElementById("uploadOverlay");
+    const percentText = document.getElementById("uploadPercent");
+
+    overlay.style.display = "flex";
+    percentText.innerText = "0%";
+
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append(field, file);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        percentText.innerText = percent + "%";
+      }
+    };
+
+    xhr.onload = () => {
+      overlay.style.display = "none";
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        alert("Upload failed");
+        reject();
+      }
+    };
+
+    xhr.onerror = () => {
+      overlay.style.display = "none";
+      alert("Upload error");
+      reject();
+    };
+
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.send(fd);
+  });
+}
+
+
+async function handleImageChange(e) {
+  if (!currentUser) return;
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const res = await uploadWithProgress({
+    url: API + "/api/media/image",
+    file,
+    field: "image"
+  });
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      image: res.imageUrl
+    })
+  });
+
+  e.target.value = "";
+  loadMessages();
+}
+
+async function handleVideoChange(e) {
+  if (!currentUser) return;
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const res = await uploadWithProgress({
+    url: API + "/api/media/video",
+    file,
+    field: "video"
+  });
+
+  await fetch(API + "/api/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      receiverId: currentUser._id,
+      video: res.videoUrl
+    })
+  });
+
+  e.target.value = "";
+  loadMessages();
+}

@@ -294,26 +294,20 @@ async function createPersonalPost() {
   let video = null;
 
   if (file) {
-    const fd = new FormData();
-
     if (file.type.startsWith("video")) {
-      fd.append("video", file);
-      const up = await fetch(API + "/api/media/video", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-        body: fd
+      const res = await uploadWithProgress({
+        url: API + "/api/media/video",
+        file,
+        field: "video"
       });
-      const d = await up.json();
-      video = d.videoUrl;
+      video = res.videoUrl;
     } else {
-      fd.append("image", file);
-      const up = await fetch(API + "/api/media/image", {
-        method: "POST",
-        headers: { Authorization: "Bearer " + token },
-        body: fd
+      const res = await uploadWithProgress({
+        url: API + "/api/media/image",
+        file,
+        field: "image"
       });
-      const d = await up.json();
-      image = d.imageUrl;
+      image = res.imageUrl;
     }
   }
 
@@ -328,6 +322,7 @@ async function createPersonalPost() {
 
   document.getElementById("personalPostText").value = "";
   document.getElementById("personalPostMedia").value = "";
+
   loadProfile();
 }
 
@@ -384,6 +379,48 @@ async function requestPersonalAccess() {
   });
   btn.innerText = "⏳ Request Pending";
   btn.disabled = true;
+}
+
+/*percentage*/
+function uploadWithProgress({ url, file, field = "image" }) {
+  return new Promise((resolve, reject) => {
+    const overlay = document.getElementById("uploadOverlay");
+    const percentText = document.getElementById("uploadPercent");
+
+    overlay.style.display = "flex";
+    percentText.innerText = "0%";
+
+    const xhr = new XMLHttpRequest();
+    const fd = new FormData();
+    fd.append(field, file);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        percentText.innerText = percent + "%";
+      }
+    };
+
+    xhr.onload = () => {
+      overlay.style.display = "none";
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        alert("Upload failed");
+        reject();
+      }
+    };
+
+    xhr.onerror = () => {
+      overlay.style.display = "none";
+      alert("Upload error");
+      reject();
+    };
+
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.send(fd);
+  });
 }
 
 /* ======================
