@@ -15,28 +15,21 @@ function getMyId() {
 const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
 const profileUserId = params.get("id") || myId;
+
 let socket = null;
-
 if (token) {
-  socket = io(API, {
-    query: { userId: myId }
-  });
+  socket = io(API, { query: { userId: myId } });
 }
+
+/* ======================
+   SOCKET (FINAL FIX)
+   ⚠️ socket শুধু reload করবে
+====================== */
 socket.on("profile-updated", data => {
-  if (data.userId !== profileUserId) return; // 🔒 MUST
-
-  const title = document.getElementById("profileTitle");
-  if (title) title.innerText = data.name;
-
-  const nameInput = document.getElementById("nameInput");
-  if (nameInput) nameInput.value = data.name;
-
-  const bioInput = document.getElementById("bio");
-  if (bioInput) bioInput.value = data.bio || "";
-
-  const img = document.getElementById("profilePic");
-  if (img && data.profilePic) img.src = data.profilePic;
+  if (data.userId !== profileUserId) return;
+  loadProfile(); // 🔥 ONLY THIS
 });
+
 /* ======================
    CHECK PERSONAL ACCESS STATUS
 ====================== */
@@ -50,16 +43,11 @@ async function checkPersonalAccessStatus() {
   );
 
   const data = await res.json();
-
   if (data.status === "pending") {
     btn.innerText = "⏳ Request Pending";
     btn.disabled = true;
   }
-
-  if (data.status === "approved") {
-    btn.style.display = "none";
-  }
-
+  if (data.status === "approved") btn.style.display = "none";
   if (data.status === "rejected") {
     btn.innerText = "Request Again";
     btn.disabled = false;
@@ -71,21 +59,16 @@ async function checkPersonalAccessStatus() {
 ====================== */
 async function loadMyProfileHeader() {
   if (!token) return;
-
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-
   const data = await res.json();
   const title = document.getElementById("profileTitle");
   if (title && data.user?.name) title.innerText = data.user.name;
 }
 
 /* ======================
-   LOAD PROFILE
-====================== */
-/* ======================
-   LOAD PROFILE (FINAL)
+   LOAD PROFILE (FINAL & SAFE)
 ====================== */
 async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
@@ -99,7 +82,6 @@ async function loadProfile() {
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
 
-  // === ELEMENTS ===
   const img = document.getElementById("profilePic");
   const nameInput = document.getElementById("nameInput");
   const bio = document.getElementById("bio");
@@ -115,42 +97,37 @@ async function loadProfile() {
   const followBtn = document.getElementById("followBtn");
   const requestBtn = document.getElementById("requestAccessBtn");
 
-  // === RESET UI (IMPORTANT) ===
+  /* 🔒 UNIVERSAL RESET (CRITICAL) */
+  nameInput.disabled = true;
+  bio.disabled = true;
+
+  editBtn.style.display = "none";
   saveBtn.style.display = "none";
   picInput.style.display = "none";
   personalBox.style.display = "none";
+
   chatBtn.style.display = "none";
   followBtn.style.display = "none";
   requestBtn.style.display = "none";
   postsSection.style.display = "block";
 
-  // === BASIC DATA ===
+  /* BASIC DATA */
   img.src = data.user.profilePic || "https://via.placeholder.com/120";
   nameInput.value = data.user.name || "";
   bio.value = data.user.bio || "";
 
-  // === OWNER VS VISITOR ===
+  /* OWNER UI */
   if (isOwner) {
-    // 🔒 locked by default
-    nameInput.disabled = true;
-    bio.disabled = true;
-
     editBtn.style.display = "inline-block";
     picInput.style.display = "inline-block";
     personalBox.style.display = "block";
-  } else {
-    // ❌ visitor → no edit
-    nameInput.disabled = true;
-    bio.disabled = true;
-    editBtn.style.display = "none";
   }
 
-  // === PRIVATE PROFILE LOGIC ===
+  /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
-
     requestBtn.style.display = "inline-block";
     requestBtn.onclick = requestPersonalAccess;
 
@@ -159,23 +136,20 @@ async function loadProfile() {
     return;
   }
 
-  // === FOLLOW / CHAT ===
+  /* FOLLOW / CHAT */
   if (!isOwner) {
     followBtn.style.display = "inline-block";
     followBtn.innerText = isFollower ? "Unfollow" : "Follow";
-    if (!isPrivate || isFollower) {
-      chatBtn.style.display = "inline-block";
-    }
+    if (!isPrivate || isFollower) chatBtn.style.display = "inline-block";
   }
 
-  // === POSTS ===
+  /* POSTS */
   posts.innerHTML = "";
   data.posts.forEach(p => {
     const div = document.createElement("div");
     div.style.border = "1px solid #ccc";
     div.style.padding = "8px";
     div.style.marginBottom = "10px";
-
     div.innerHTML = `
       <p>${p.content || ""}</p>
       ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
@@ -186,215 +160,16 @@ async function loadProfile() {
 
   await loadPersonalPosts({ isOwner });
 }
-/* ======================
-   LOAD PERSONAL POSTS
-====================== */
-async function loadPersonalPosts({ isOwner }) {
-  const container = document.getElementById("personalPosts");
-  if (!container) return;
-
-  let hasAccess = false;
-
-  if (!isOwner) {
-    const res = await fetch(
-      API + "/api/personal-access/status/" + profileUserId,
-      { headers: { Authorization: "Bearer " + token } }
-    );
-    const data = await res.json();
-    hasAccess = data.status === "approved";
-  }
-
-  if (!isOwner && !hasAccess) {
-    container.innerHTML = `
-      <p style="color:#888">🔒 Personal posts are private</p>
-      <button onclick="requestPersonalAccess()">Request Access</button>
-    `;
-    return;
-  }
-
-  const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  const list = await res.json();
-  container.innerHTML = "";
-
-  if (!list.length) {
-    container.innerHTML = "<p style='color:#888'>No personal posts</p>";
-    return;
-  }
-
-  list.forEach(p => {
-    const div = document.createElement("div");
-    div.style.border = "1px dashed #aaa";
-    div.style.padding = "8px";
-    div.style.marginBottom = "8px";
-
-    div.innerHTML = `
-      <p>${p.content || ""}</p>
-      ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-      ${p.video ? `
-        <video controls style="max-width:100%;margin-top:6px">
-          <source src="${p.video}">
-        </video>` : ""}
-      <div style="font-size:12px;color:#666">
-        ${new Date(p.createdAt).toLocaleString()}
-      </div>
-
-      ${isOwner ? `
-        <button onclick='editPersonalPost(
-          "${p._id}",
-          ${JSON.stringify(p.content || "")},
-          ${JSON.stringify(p.image || "")},
-          ${JSON.stringify(p.video || "")}
-        )'>✏️ Edit</button>
-
-        <button style="color:red"
-          onclick="deletePersonalPost('${p._id}')">🗑 Delete</button>
-      ` : ""}
-    `;
-    container.appendChild(div);
-  });
-}
 
 /* ======================
-   EDIT / DELETE PERSONAL POST
+   EDIT / SAVE PROFILE
 ====================== */
-async function editPersonalPost(id, oldText, oldImage, oldVideo) {
-  const newText = prompt("Edit post:", oldText);
-  if (newText === null) return;
-
-  const file = document.createElement("input");
-  file.type = "file";
-  file.accept = "image/*,video/*";
-
-  file.onchange = async () => {
-    let image = oldImage || null;
-    let video = oldVideo || null;
-
-    if (file.files[0]) {
-      const f = file.files[0];
-      const fd = new FormData();
-
-      if (f.type.startsWith("video")) {
-        fd.append("video", f);
-        const up = await fetch(API + "/api/media/video", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + token },
-          body: fd
-        });
-        const d = await up.json();
-        video = d.videoUrl;
-        image = null;
-      } else {
-        fd.append("image", f);
-        const up = await fetch(API + "/api/media/image", {
-          method: "POST",
-          headers: { Authorization: "Bearer " + token },
-          body: fd
-        });
-        const d = await up.json();
-        image = d.imageUrl;
-        video = null;
-      }
-    }
-
-    await fetch(API + "/api/personal-posts/" + id, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify({ content: newText, image, video })
-    });
-
-    loadProfile();
-  };
-
-  file.click();
-}
-
-async function deletePersonalPost(id) {
-  if (!confirm("Delete this personal post?")) return;
-
-  await fetch(API + "/api/personal-posts/" + id, {
-    method: "DELETE",
-    headers: { Authorization: "Bearer " + token }
-  });
-
-  loadProfile();
-}
-
-/* ======================
-   CREATE PERSONAL POST
-====================== */
-async function createPersonalPost() {
-  const text = document.getElementById("personalPostText").value.trim();
-  const file = document.getElementById("personalPostMedia").files[0];
-
-  if (!text && !file) {
-    alert("Write something or select image/video");
-    return;
-  }
-
-  let image = null;
-  let video = null;
-
-  if (file) {
-    if (file.type.startsWith("video")) {
-      const res = await uploadWithProgress({
-        url: API + "/api/media/video",
-        file,
-        field: "video"
-      });
-      video = res.videoUrl;
-    } else {
-      const res = await uploadWithProgress({
-        url: API + "/api/media/image",
-        file,
-        field: "image"
-      });
-      image = res.imageUrl;
-    }
-  }
-
-  await fetch(API + "/api/personal-posts", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify({ content: text, image, video })
-  });
-
-  document.getElementById("personalPostText").value = "";
-  document.getElementById("personalPostMedia").value = "";
-
-  loadProfile();
-}
-
-/* ======================
-   FOLLOW / UPDATE / CHAT
-====================== */
-async function toggleFollow() {
-  await fetch(API + "/api/users/follow/" + profileUserId, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token }
-  });
-  loadProfile();
-}
 function enableProfileEdit() {
-  const nameInput = document.getElementById("nameInput");
-  const bio = document.getElementById("bio");
-  const saveBtn = document.getElementById("saveBtn");
-
-  nameInput.disabled = false;
-  bio.disabled = false;
-
-  nameInput.focus();
-  saveBtn.style.display = "inline-block";
+  if (profileUserId !== myId) return;
+  document.getElementById("nameInput").disabled = false;
+  document.getElementById("bio").disabled = false;
+  document.getElementById("saveBtn").style.display = "inline-block";
 }
-
 
 async function updateProfile() {
   if (profileUserId !== myId) return;
@@ -404,17 +179,14 @@ async function updateProfile() {
   const file = document.getElementById("profilePicInput").files[0];
 
   let profilePicUrl = null;
-
   if (file) {
     const fd = new FormData();
     fd.append("image", file);
-
     const up = await fetch(API + "/api/media/image", {
       method: "POST",
       headers: { Authorization: "Bearer " + token },
       body: fd
     });
-
     const d = await up.json();
     profilePicUrl = d.imageUrl;
   }
@@ -425,83 +197,13 @@ async function updateProfile() {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     },
-    body: JSON.stringify({
-      name: nameText,
-      bio: bioText,
-      profilePic: profilePicUrl
-    })
+    body: JSON.stringify({ name: nameText, bio: bioText, profilePic: profilePicUrl })
   });
 
   const data = await res.json();
+  if (!res.ok) return alert(data.msg || "Profile update failed");
 
-  if (!res.ok) {
-    alert(data.msg || "Profile update failed");
-    return;
-  }
-
-  // 🔄 reload profile data
   loadProfile();
-
-  // 🔒 lock inputs again (✅ THIS IS THE RIGHT PLACE)
-  document.getElementById("nameInput").disabled = true;
-  document.getElementById("bio").disabled = true;
-  document.getElementById("saveBtn").style.display = "none";
-}
-
-function openDM() {
-  location.href = "chat.html?userId=" + profileUserId;
-}
-
-async function requestPersonalAccess() {
-  const btn = document.getElementById("requestAccessBtn");
-  await fetch(API + "/api/personal-access/request/" + profileUserId, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token }
-  });
-  btn.innerText = "⏳ Request Pending";
-  btn.disabled = true;
-}
-
-/*percentage*/
-function uploadWithProgress({ url, file, field = "image" }) {
-  return new Promise((resolve, reject) => {
-    const overlay = document.getElementById("uploadOverlay");
-    const percentText = document.getElementById("uploadPercent");
-
-    overlay.style.display = "flex";
-    percentText.innerText = "0%";
-
-    const xhr = new XMLHttpRequest();
-    const fd = new FormData();
-    fd.append(field, file);
-
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        percentText.innerText = percent + "%";
-      }
-    };
-
-    xhr.onload = () => {
-      overlay.style.display = "none";
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
-      } else {
-        alert("Upload failed");
-        reject();
-      }
-    };
-
-    xhr.onerror = () => {
-      overlay.style.display = "none";
-      alert("Upload error");
-      reject();
-    };
-
-    xhr.open("POST", url);
-    xhr.setRequestHeader("Authorization", "Bearer " + token);
-    xhr.send(fd);
-  });
 }
 
 /* ======================
