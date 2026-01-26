@@ -321,6 +321,20 @@ function closeProfilePic() {
   const modal = document.getElementById("profilePicModal");
   modal.style.display = "none";
 }
+/*pic download*/
+function downloadProfilePic(e) {
+  e.stopPropagation(); // modal close prevent
+
+  const img = document.getElementById("profilePicFull");
+  if (!img || !img.src) return;
+
+  const a = document.createElement("a");
+  a.href = img.src;
+  a.download = "profile-picture.jpg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 // ... উপরের সব code
 
 async function openFollowers() {
