@@ -27,6 +27,7 @@ async function checkPersonalAccessStatus() {
     API + "/api/personal-access/status/" + profileUserId,
     { headers: { Authorization: "Bearer " + token } }
   );
+
   const data = await res.json();
 
   if (data.status === "pending") {
@@ -53,8 +54,8 @@ async function loadMyProfileHeader() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-  const data = await res.json();
 
+  const data = await res.json();
   const title = document.getElementById("profileTitle");
   if (title && data.user?.name) title.innerText = data.user.name;
 }
@@ -66,6 +67,7 @@ async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
+
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
@@ -81,12 +83,9 @@ async function loadProfile() {
   const followBtn = document.getElementById("followBtn");
   const saveBtn = document.getElementById("saveBtn");
   const picInput = document.getElementById("profilePicInput");
-  const followersCount = document.getElementById("followersCount");
-  const followingCount = document.getElementById("followingCount");
   const personalBox = document.getElementById("personalPostBox");
   const requestBtn = document.getElementById("requestAccessBtn");
 
-  /* RESET UI */
   saveBtn.style.display = "none";
   picInput.style.display = "none";
   chatBtn.style.display = "none";
@@ -99,15 +98,10 @@ async function loadProfile() {
   bio.value = data.user.bio || "";
   bio.disabled = !isOwner;
 
-  followersCount.innerText = data.user.followersCount || 0;
-  followingCount.innerText = data.user.followingCount || 0;
-
-  /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {
     postsSection.style.display = "none";
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
-
     requestBtn.style.display = "inline-block";
     requestBtn.onclick = requestPersonalAccess;
 
@@ -174,9 +168,10 @@ async function loadPersonalPosts({ isOwner }) {
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
-  const list = await res.json();
 
+  const list = await res.json();
   container.innerHTML = "";
+
   if (!list.length) {
     container.innerHTML = "<p style='color:#888'>No personal posts</p>";
     return;
@@ -190,14 +185,11 @@ async function loadPersonalPosts({ isOwner }) {
 
     div.innerHTML = `
       <p>${p.content || ""}</p>
-
       ${p.image ? `<img src="${p.image}" style="max-width:100%;margin-top:6px">` : ""}
-
       ${p.video ? `
         <video controls style="max-width:100%;margin-top:6px">
           <source src="${p.video}">
         </video>` : ""}
-
       <div style="font-size:12px;color:#666">
         ${new Date(p.createdAt).toLocaleString()}
       </div>
@@ -282,6 +274,7 @@ async function deletePersonalPost(id) {
     method: "DELETE",
     headers: { Authorization: "Bearer " + token }
   });
+
   loadProfile();
 }
 
