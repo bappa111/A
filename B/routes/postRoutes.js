@@ -46,6 +46,24 @@ router.post("/", auth, async (req, res) => {
 /* ======================
    GET FEED (PAGINATED)
 ====================== */
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate("userId", "name profilePic")
+      .populate("comments.userId", "name profilePic");
+
+    if (!post) {
+      return res.status(404).json({ msg: "Post not found" });
+    }
+
+    res.json(post);
+  } catch (e) {
+    res.status(500).json({ msg: "Post load failed" });
+  }
+});
+/* ======================
+   GET FEED (PAGINATED)
+====================== */
 router.get("/", auth, async (req, res) => {
   try {
     const page = parseInt(req.query.page || "1");
@@ -62,6 +80,7 @@ router.get("/", auth, async (req, res) => {
           select: "name profilePic"
         }
       })
+      .populate("comments.userId", "name profilePic") // 👈 এই লাইনটা এখানেই ADD
       .sort({ _id: -1 })
       .skip(skip)
       .limit(limit)
@@ -82,7 +101,6 @@ router.get("/", auth, async (req, res) => {
     res.status(500).json({ msg: "Feed load failed" });
   }
 });
-
 /* ======================
    LIKE / UNLIKE
 ====================== */

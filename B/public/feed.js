@@ -245,10 +245,16 @@ ${p.video ? `
 </div>
 
 ${(p.comments || []).map(c => `
-  <div style="margin-left:10px">
-    💬 ${c.text}
-    <div style="font-size:11px;color:#888">${timeAgo(c.createdAt)}</div>
-  </div>`).join("")}
+  <div style="display:flex;gap:6px;margin-left:10px;margin-top:6px">
+    <img src="${c.userId?.profilePic || 'https://via.placeholder.com/30'}"
+         style="width:24px;height:24px;border-radius:50%">
+    <div>
+      <b style="font-size:13px">${c.userId?.name || 'User'}</b>
+      <div style="font-size:14px">${c.text}</div>
+      <div style="font-size:11px;color:#888">${timeAgo(c.createdAt)}</div>
+    </div>
+  </div>
+`).join("")}
 
 <input id="c-${p._id}" placeholder="Write comment..." style="width:70%">
 <button onclick="addComment('${p._id}')">Send</button>
