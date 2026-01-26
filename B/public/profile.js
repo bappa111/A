@@ -303,6 +303,61 @@ async function toggleFollow() {
 function openDM() {
   location.href = "chat.html?userId=" + profileUserId;
 }
+// ... উপরের সব code
+
+async function openFollowers() {
+  const res = await fetch(
+    API + "/api/users/" + profileUserId + "/followers",
+    { headers: { Authorization: "Bearer " + token } }
+  );
+  const list = await res.json();
+  showFollowModal("Followers", list);
+}
+
+async function openFollowing() {
+  const res = await fetch(
+    API + "/api/users/" + profileUserId + "/following",
+    { headers: { Authorization: "Bearer " + token } }
+  );
+  const list = await res.json();
+  showFollowModal("Following", list);
+}
+
+/* 🔥 ঠিক এখানেই বসাবে */
+function showFollowModal(title, users) {
+  const modal = document.getElementById("followModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalList = document.getElementById("modalList");
+
+  modalTitle.innerText = title;
+  modalList.innerHTML = "";
+
+  if (!users.length) {
+    modalList.innerHTML = "<p>No users</p>";
+  } else {
+    users.forEach(u => {
+      const div = document.createElement("div");
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "10px";
+      div.style.marginBottom = "8px";
+
+      div.innerHTML = `
+        <img src="${u.profilePic || 'https://via.placeholder.com/40'}"
+             width="40" height="40" style="border-radius:50%">
+        <a href="profile.html?id=${u._id}">${u.name}</a>
+      `;
+      modalList.appendChild(div);
+    });
+  }
+
+  modal.style.display = "block";
+}
+
+function closeModal() {
+  document.getElementById("followModal").style.display = "none";
+}
+
 
 async function requestPersonalAccess() {
   const btn = document.getElementById("requestAccessBtn");
