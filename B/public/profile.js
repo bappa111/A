@@ -127,12 +127,15 @@ async function loadProfile() {
   document.getElementById("followingCount").innerText =
     data.user.followingCount ?? data.user.following.length;
 
-  /* OWNER UI */
-  if (isOwner) {
-    editBtn.style.display = "inline-block";
-    picInput.style.display = "inline-block";
-    personalBox.style.display = "block";
-  }
+/* OWNER UI */
+if (isOwner) {
+  editBtn.style.display = "inline-block";
+  picInput.style.display = "inline-block";
+  personalBox.style.display = "block";
+
+  // 🔥 OWNER ACCESS REQUESTS LOAD
+  loadAccessRequests();
+}
 
   /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {
@@ -458,9 +461,61 @@ async function requestPersonalAccess() {
   btn.disabled = true;
 }
 
+async function loadAccessRequests() {
+  const box = document.getElementById("personalAccessRequests");
+  const list = document.getElementById("accessRequestList");
+  if (!box || !list) return;
+
+  const res = await fetch(API + "/api/personal-access/requests", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const requests = await res.json();
+
+  if (!requests.length) {
+    box.style.display = "none";
+    return;
+  }
+
+  box.style.display = "block";
+  list.innerHTML = "";
+
+  requests.forEach(r => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "8px";
+    div.style.marginBottom = "6px";
+
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="${r.requester.profilePic || 'https://via.placeholder.com/40'}"
+             width="40" height="40" style="border-radius:50%">
+        <b>${r.requester.name}</b>
+      </div>
+      <button onclick="approveAccess('${r._id}')">✅ Approve</button>
+      <button onclick="rejectAccess('${r._id}')">❌ Reject</button>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+async function approveAccess(id) {
+  await fetch(API + "/api/personal-access/approve/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadAccessRequests();
+}
+
+async function rejectAccess(id) {
+  await fetch(API + "/api/personal-access/reject/" + id, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+  loadAccessRequests();
+}
 /* ======================
    INIT
 ====================== */
 loadMyProfileHeader();
 loadProfile();
-
