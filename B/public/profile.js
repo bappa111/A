@@ -198,13 +198,32 @@ async function loadPersonalPosts({ isOwner }) {
     hasAccess = data.status === "approved";
   }
 
-  if (!hasAccess) {
-    container.innerHTML = `
-      <p style="color:#888">🔒 Personal posts are private</p>
-      <button onclick="requestPersonalAccess()">Request Access</button>
-    `;
-    return;
+if (!hasAccess) {
+  const res = await fetch(
+    API + "/api/personal-access/status/" + profileUserId,
+    { headers: { Authorization: "Bearer " + token } }
+  );
+  const statusData = await res.json();
+
+  let msg = "🔒 Personal posts are private";
+  let btnHtml = "";
+
+  if (statusData.status === "pending") {
+    msg = "⏳ Access request sent. Waiting for approval.";
+    btnHtml = `<button disabled>Request Sent</button>`;
+  } else if (statusData.status === "rejected") {
+    msg = "❌ Request rejected. You can try again.";
+    btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
+  } else {
+    btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
   }
+
+  container.innerHTML = `
+    <p style="color:#888">${msg}</p>
+    ${btnHtml}
+  `;
+  return;
+}
 
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
