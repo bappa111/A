@@ -533,6 +533,16 @@ async function rejectAccess(id) {
   });
   loadAccessRequests();
 }
+async function removePersonalAccess(userId) {
+  if (!confirm("Remove this user's personal access?")) return;
+
+  await fetch(API + "/api/personal-access/remove/" + userId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  alert("Access removed");
+}
 /* ======================
    INIT
 ====================== */

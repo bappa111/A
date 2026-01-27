@@ -109,4 +109,28 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+/* ======================
+   REMOVE ACCESS (OWNER ONLY)
+====================== */
+router.post("/remove/:requesterId", auth, async (req, res) => {
+  try {
+    const requesterId = req.params.requesterId;
+
+    // 1️⃣ access record delete
+    await Access.deleteOne({
+      owner: req.user.id,
+      requester: requesterId
+    });
+
+    // 2️⃣ personal post থেকে access remove
+    await PersonalPost.updateMany(
+      { owner: req.user.id },
+      { $pull: { allowedUsers: requesterId } }
+    );
+
+    res.json({ removed: true });
+  } catch (e) {
+    res.status(500).json({ msg: "Remove access failed" });
+  }
+});
 module.exports = router;
