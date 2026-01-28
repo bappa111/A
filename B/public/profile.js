@@ -136,7 +136,7 @@ if (myId === profileUserId) {
   const accessBox = document.getElementById("personalAccessRequests");
   if (accessBox) {
     accessBox.style.display = "block";
-    loadAccessRequests();
+    loadAccessLists();
   }
 }
 
