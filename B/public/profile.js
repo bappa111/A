@@ -135,7 +135,7 @@ if (isOwner) {
 
   // ✅ ONLY THIS
   document.getElementById("personalAccessRequests").style.display = "block";
-  loadAccessLists();
+  loadAccessRequests();
 }
 
   /* PRIVATE PROFILE */
@@ -473,12 +473,18 @@ async function createPersonalPost() {
 
 async function requestPersonalAccess() {
   const btn = document.getElementById("requestAccessBtn");
+
   await fetch(API + "/api/personal-access/request/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-  btn.innerText = "⏳ Request Pending";
+
+  // 🔥 UI feedback
+  btn.innerText = "⏳ Request Sent";
   btn.disabled = true;
+
+  // 🔥 IMPORTANT: reload personal posts section
+  loadPersonalPosts({ isOwner: false });
 }
 
 async function approveAccess(id) {
