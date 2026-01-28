@@ -134,16 +134,17 @@ router.post("/remove/:requesterId", auth, async (req, res) => {
   }
 });
 /* ======================
-   GET ALL ACCESS LISTS (OWNER ONLY)
+   GET ALL ACCESS (OWNER ONLY)
 ====================== */
 router.get("/all", auth, async (req, res) => {
   try {
     const list = await Access.find({ owner: req.user.id })
       .populate("requester", "name profilePic")
-      .lean();
+      .sort({ createdAt: -1 });
 
     res.json(list);
-  } catch {
+  } catch (e) {
+    console.error(e);
     res.status(500).json([]);
   }
 });
