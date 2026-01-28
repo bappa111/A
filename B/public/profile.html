@@ -118,12 +118,21 @@ Following:
 </div>
 
 <!-- ================= PERSONAL ACCESS ================= -->
+<!-- ================= PERSONAL ACCESS (OWNER ONLY) ================= -->
 <div
   id="personalAccessRequests"
   style="display:none;margin-bottom:15px"
 >
-  <h4>🔐 Personal Access Requests</h4>
-  <div id="accessRequestList"></div>
+  <h4>🔐 Personal Access Control</h4>
+
+  <h5>⏳ Pending Requests</h5>
+  <div id="pendingList"></div>
+
+  <h5>✅ Approved Users</h5>
+  <div id="approvedList"></div>
+
+  <h5>❌ Rejected Requests</h5>
+  <div id="rejectedList"></div>
 </div>
 
 <h4>🔒 Personal Posts</h4>
@@ -135,9 +144,6 @@ Following:
   Request Personal Access
 </button>
 
-<button onclick="removePersonalAccess('USER_ID')">
-  ❌ Remove Access
-</button>
 <div id="personalPosts" style="margin-top:10px"></div>
 
 <!-- ================= FOLLOW LIST MODAL ================= -->

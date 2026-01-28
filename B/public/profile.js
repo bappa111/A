@@ -133,8 +133,9 @@ if (isOwner) {
   picInput.style.display = "inline-block";
   personalBox.style.display = "block";
 
-  // 🔥 OWNER ACCESS REQUESTS LOAD
-  loadAccessRequests();
+  // ✅ ONLY THIS
+  document.getElementById("personalAccessRequests").style.display = "block";
+  loadAccessLists();
 }
 
   /* PRIVATE PROFILE */
@@ -480,44 +481,6 @@ async function requestPersonalAccess() {
   btn.disabled = true;
 }
 
-async function loadAccessRequests() {
-  const box = document.getElementById("personalAccessRequests");
-  const list = document.getElementById("accessRequestList");
-  if (!box || !list) return;
-
-  const res = await fetch(API + "/api/personal-access/requests", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const requests = await res.json();
-
-  if (!requests.length) {
-    box.style.display = "none";
-    return;
-  }
-
-  box.style.display = "block";
-  list.innerHTML = "";
-
-  requests.forEach(r => {
-    const div = document.createElement("div");
-    div.style.border = "1px solid #ccc";
-    div.style.padding = "8px";
-    div.style.marginBottom = "6px";
-
-    div.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px">
-        <img src="${r.requester.profilePic || 'https://via.placeholder.com/40'}"
-             width="40" height="40" style="border-radius:50%">
-        <b>${r.requester.name}</b>
-      </div>
-      <button onclick="approveAccess('${r._id}')">✅ Approve</button>
-      <button onclick="rejectAccess('${r._id}')">❌ Reject</button>
-    `;
-
-    list.appendChild(div);
-  });
-}
-
 async function approveAccess(id) {
   await fetch(API + "/api/personal-access/approve/" + id, {
     method: "POST",
@@ -542,6 +505,51 @@ async function removePersonalAccess(userId) {
   });
 
   alert("Access removed");
+}
+async function loadAccessLists() {
+  const res = await fetch(API + "/api/personal-access/all", {
+    headers: { Authorization: "Bearer " + token }
+  });
+  const list = await res.json();
+
+  const pending = document.getElementById("pendingList");
+  const approved = document.getElementById("approvedList");
+  const rejected = document.getElementById("rejectedList");
+
+  pending.innerHTML = approved.innerHTML = rejected.innerHTML = "";
+
+  list.forEach(r => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "8px";
+
+    div.innerHTML = `
+      <img src="${r.requester.profilePic || 'https://via.placeholder.com/30'}"
+           width="30" style="border-radius:50%">
+      ${r.requester.name}
+    `;
+
+    if (r.status === "pending") {
+      div.innerHTML += `
+        <button onclick="approveAccess('${r._id}')">✅</button>
+        <button onclick="rejectAccess('${r._id}')">❌</button>
+      `;
+      pending.appendChild(div);
+    }
+
+    if (r.status === "approved") {
+      div.innerHTML += `
+        <button onclick="removePersonalAccess('${r.requester._id}')">🚫 Remove</button>
+      `;
+      approved.appendChild(div);
+    }
+
+    if (r.status === "rejected") {
+      div.innerHTML += `
+        <button onclick="approveAccess('${r._id}')">♻️ Approve</button>
+      `;
+      rejected.appendChild(div);
+    }
+  });
 }
 /* ======================
    INIT

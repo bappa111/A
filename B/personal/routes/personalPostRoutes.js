@@ -133,4 +133,18 @@ router.post("/remove/:requesterId", auth, async (req, res) => {
     res.status(500).json({ msg: "Remove access failed" });
   }
 });
+/* ======================
+   GET ALL ACCESS LISTS (OWNER ONLY)
+====================== */
+router.get("/all", auth, async (req, res) => {
+  try {
+    const list = await Access.find({ owner: req.user.id })
+      .populate("requester", "name profilePic")
+      .lean();
+
+    res.json(list);
+  } catch {
+    res.status(500).json([]);
+  }
+});
 module.exports = router;
