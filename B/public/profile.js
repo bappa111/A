@@ -28,7 +28,26 @@ if (token && typeof io !== "undefined") {
     loadProfile(); // only reload profile
   });
 }
+// ======================
+// REALTIME PERSONAL ACCESS EVENTS
+// ======================
+if (socket) {
+  socket.on("access-requested", () => {
+    // 🔔 owner side refresh
+    if (profileUserId === myId) {
+      loadAccessRequests();
+    }
+  });
 
+  socket.on("access-approved", () => {
+    // 🔔 requester side refresh
+    loadPersonalPosts({ isOwner: false });
+  });
+
+  socket.on("access-rejected", () => {
+    loadPersonalPosts({ isOwner: false });
+  });
+}
 /* ======================
    PERSONAL ACCESS STATUS
 ====================== */

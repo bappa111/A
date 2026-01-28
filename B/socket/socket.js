@@ -1,5 +1,4 @@
 const socketio = require("socket.io");
-const Message = require("../models/Message");
 const User = require("../models/User");
 
 const onlineUsers = new Map();
@@ -21,7 +20,7 @@ const initSocket = (server) => {
 
     const uid = userId.toString();
 
-    // 🔥 JOIN USER ROOM (for notifications)
+    // 🔥 join private room
     socket.join(uid);
     onlineUsers.set(uid, socket.id);
 
@@ -31,12 +30,9 @@ const initSocket = (server) => {
       console.log("Socket online update error:", e.message);
     }
 
-    // 🔔 OPTIONAL: broadcast online users (future use)
+    // optional broadcast
     io.emit("online-users", [...onlineUsers.keys()]);
 
-    /* ======================
-       DISCONNECT
-    ====================== */
     socket.on("disconnect", async () => {
       onlineUsers.delete(uid);
 
@@ -55,7 +51,7 @@ const initSocket = (server) => {
 };
 
 /* ======================
-   GET IO INSTANCE
+   HELPERS
 ====================== */
 const getIO = () => {
   if (!ioInstance) {
@@ -64,4 +60,9 @@ const getIO = () => {
   return ioInstance;
 };
 
-module.exports = { initSocket, getIO };
+const notifyUser = (userId, event, payload = {}) => {
+  if (!ioInstance) return;
+  ioInstance.to(userId.toString()).emit(event, payload);
+};
+
+module.exports = { initSocket, getIO, notifyUser };
