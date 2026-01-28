@@ -5,12 +5,55 @@ const Access = require("../models/PersonalAccessRequest");
 
 const router = express.Router();
 
-/* ======================
+/* =====================================================
+   GET ALL ACCESS LIST (OWNER ONLY)
+   - pending / approved / rejected সব একসাথে
+===================================================== */
+router.get("/all", auth, async (req, res) => {
+  try {
+    const list = await Access.find({ owner: req.user.id })
+      .populate("requester", "name profilePic")
+      .sort({ createdAt: -1 });
+
+    res.json(list);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json([]);
+  }
+});
+
+/* =====================================================
+   REMOVE ACCESS (OWNER ONLY)
+   - approved user remove করলে সব post থেকে access যাবে
+===================================================== */
+router.post("/remove/:requesterId", auth, async (req, res) => {
+  try {
+    const requesterId = req.params.requesterId;
+
+    // access record delete
+    await Access.deleteOne({
+      owner: req.user.id,
+      requester: requesterId
+    });
+
+    // personal post থেকে remove
+    await PersonalPost.updateMany(
+      { owner: req.user.id },
+      { $pull: { allowedUsers: requesterId } }
+    );
+
+    res.json({ removed: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ msg: "Remove access failed" });
+  }
+});
+
+/* =====================================================
    CREATE PERSONAL POST (OWNER ONLY)
-====================== */
+===================================================== */
 router.post("/", auth, async (req, res) => {
   try {
-    // 🔐 get all approved users for owner
     const approved = await Access.find({
       owner: req.user.id,
       status: "approved"
@@ -33,10 +76,11 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-/* ======================
+/* =====================================================
    GET PERSONAL POSTS
-   (OWNER OR APPROVED USERS ONLY)
-====================== */
+   - owner → সব post
+   - approved user → allowedUsers match
+===================================================== */
 router.get("/:ownerId", auth, async (req, res) => {
   try {
     const ownerId = req.params.ownerId;
@@ -44,12 +88,11 @@ router.get("/:ownerId", auth, async (req, res) => {
 
     let query;
 
-    // ✅ OWNER → সব personal post
     if (me === ownerId) {
+      // owner sees all
       query = { owner: ownerId };
-    } 
-    // ✅ APPROVED USER → allowedUsers check
-    else {
+    } else {
+      // approved user only
       query = {
         owner: ownerId,
         allowedUsers: me
@@ -67,9 +110,9 @@ router.get("/:ownerId", auth, async (req, res) => {
   }
 });
 
-/* ======================
+/* =====================================================
    UPDATE PERSONAL POST (OWNER ONLY)
-====================== */
+===================================================== */
 router.put("/:id", auth, async (req, res) => {
   try {
     const post = await PersonalPost.findById(req.params.id);
@@ -90,9 +133,9 @@ router.put("/:id", auth, async (req, res) => {
   }
 });
 
-/* ======================
+/* =====================================================
    DELETE PERSONAL POST (OWNER ONLY)
-====================== */
+===================================================== */
 router.delete("/:id", auth, async (req, res) => {
   try {
     const post = await PersonalPost.findById(req.params.id);
@@ -109,43 +152,4 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-/* ======================
-   REMOVE ACCESS (OWNER ONLY)
-====================== */
-router.post("/remove/:requesterId", auth, async (req, res) => {
-  try {
-    const requesterId = req.params.requesterId;
-
-    // 1️⃣ access record delete
-    await Access.deleteOne({
-      owner: req.user.id,
-      requester: requesterId
-    });
-
-    // 2️⃣ personal post থেকে access remove
-    await PersonalPost.updateMany(
-      { owner: req.user.id },
-      { $pull: { allowedUsers: requesterId } }
-    );
-
-    res.json({ removed: true });
-  } catch (e) {
-    res.status(500).json({ msg: "Remove access failed" });
-  }
-});
-/* ======================
-   GET ALL ACCESS (OWNER ONLY)
-====================== */
-router.get("/all", auth, async (req, res) => {
-  try {
-    const list = await Access.find({ owner: req.user.id })
-      .populate("requester", "name profilePic")
-      .sort({ createdAt: -1 });
-
-    res.json(list);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json([]);
-  }
-});
 module.exports = router;
