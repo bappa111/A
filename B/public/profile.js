@@ -127,15 +127,17 @@ async function loadProfile() {
   document.getElementById("followingCount").innerText =
     data.user.followingCount ?? data.user.following.length;
 
-/* OWNER UI */
-if (isOwner) {
+/* OWNER UI — ONLY WHEN VIEWING OWN PROFILE */
+if (myId === profileUserId) {
   editBtn.style.display = "inline-block";
   picInput.style.display = "inline-block";
   personalBox.style.display = "block";
 
-  // ✅ ONLY THIS
-  document.getElementById("personalAccessRequests").style.display = "block";
-  loadAccessRequests();
+  const accessBox = document.getElementById("personalAccessRequests");
+  if (accessBox) {
+    accessBox.style.display = "block";
+    loadAccessRequests();
+  }
 }
 
   /* PRIVATE PROFILE */
