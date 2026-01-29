@@ -524,14 +524,13 @@ async function rejectAccess(id) {
   loadAccessRequests();
 }
 async function removePersonalAccess(userId) {
-  if (!confirm("Remove this user's personal access?")) return;
-
   await fetch(API + "/api/personal-access/remove/" + userId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  alert("Access removed");
+  // 🔥 UI instantly refresh
+  loadAccessRequests();   // pending/approved list refresh
 }
 async function loadAccessLists() {
   const res = await fetch(API + "/api/personal-access/all", {
