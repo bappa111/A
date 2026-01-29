@@ -9,24 +9,21 @@ const router = express.Router();
    REQUEST ACCESS (USER → OWNER)
 ====================== */
 router.post("/request/:ownerId", auth, async (req, res) => {
-  try {
-    if (req.params.ownerId === req.user.id) {
-      return res.status(400).json({ msg: "Invalid request" });
-    }
-
-    await Access.findOneAndUpdate(
-      {
-        owner: req.params.ownerId,
-        requester: req.user.id
-      },
-      { status: "pending" },
-      { upsert: true, new: true }
-    );
-
-    res.json({ requested: true });
-  } catch (e) {
-    res.status(500).json({ msg: "Request failed" });
+  if (req.params.ownerId === req.user.id) {
+    return res.status(400).json({ msg: "Invalid request" });
   }
+
+  await Access.findOneAndUpdate(
+    { owner: req.params.ownerId, requester: req.user.id },
+    { status: "pending" },
+    { upsert: true, new: true }
+  );
+
+  // 🔔 realtime notify owner
+  const { getIO } = require("../../socket/socket");
+  getIO().to(req.params.ownerId).emit("access-requested");
+
+  res.json({ requested: true });
 });
 
 /* ======================
@@ -43,18 +40,26 @@ router.get("/status/:ownerId", auth, async (req, res) => {
 });
 
 /* ======================
-   GET ALL ACCESS LIST (OWNER ONLY)
+   GET PENDING REQUESTS (OWNER ONLY)
+====================== */
+router.get("/requests", auth, async (req, res) => {
+  const list = await Access.find({
+    owner: req.user.id,
+    status: "pending"
+  }).populate("requester", "name profilePic");
+
+  res.json(list);
+});
+
+/* ======================
+   GET ALL ACCESS (OWNER ONLY)
 ====================== */
 router.get("/all", auth, async (req, res) => {
-  try {
-    const list = await Access.find({ owner: req.user.id })
-      .populate("requester", "name profilePic")
-      .sort({ createdAt: -1 });
+  const list = await Access.find({ owner: req.user.id })
+    .populate("requester", "name profilePic")
+    .sort({ createdAt: -1 });
 
-    res.json(list);
-  } catch (e) {
-    res.status(500).json([]);
-  }
+  res.json(list);
 });
 
 /* ======================
@@ -76,6 +81,10 @@ router.post("/approve/:id", auth, async (req, res) => {
     { $addToSet: { allowedUsers: access.requester } }
   );
 
+  // 🔔 realtime notify requester
+  const { getIO } = require("../../socket/socket");
+  getIO().to(access.requester.toString()).emit("access-approved");
+
   res.json({ approved: true });
 });
 
@@ -92,6 +101,10 @@ router.post("/reject/:id", auth, async (req, res) => {
   access.status = "rejected";
   await access.save();
 
+  // 🔔 realtime notify requester
+  const { getIO } = require("../../socket/socket");
+  getIO().to(access.requester.toString()).emit("access-rejected");
+
   res.json({ rejected: true });
 });
 
@@ -99,23 +112,19 @@ router.post("/reject/:id", auth, async (req, res) => {
    REMOVE ACCESS (OWNER ONLY)
 ====================== */
 router.post("/remove/:requesterId", auth, async (req, res) => {
-  try {
-    const requesterId = req.params.requesterId;
+  const requesterId = req.params.requesterId;
 
-    await Access.deleteOne({
-      owner: req.user.id,
-      requester: requesterId
-    });
+  await Access.deleteOne({
+    owner: req.user.id,
+    requester: requesterId
+  });
 
-    await PersonalPost.updateMany(
-      { owner: req.user.id },
-      { $pull: { allowedUsers: requesterId } }
-    );
+  await PersonalPost.updateMany(
+    { owner: req.user.id },
+    { $pull: { allowedUsers: requesterId } }
+  );
 
-    res.json({ removed: true });
-  } catch (e) {
-    res.status(500).json({ msg: "Remove failed" });
-  }
+  res.json({ removed: true });
 });
 
 module.exports = router;

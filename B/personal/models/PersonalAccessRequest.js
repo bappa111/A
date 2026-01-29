@@ -1,19 +1,17 @@
 const mongoose = require("mongoose");
 
-const accessSchema = new mongoose.Schema(
+const PersonalAccessRequestSchema = new mongoose.Schema(
   {
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
     },
-
     requester: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
     },
-
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
@@ -23,4 +21,7 @@ const accessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("PersonalAccessRequest", accessSchema);
+module.exports = mongoose.model(
+  "PersonalAccessRequest",
+  PersonalAccessRequestSchema
+);
