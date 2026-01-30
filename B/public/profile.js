@@ -217,6 +217,7 @@ async function loadPersonalPosts({ isOwner }) {
   const container = document.getElementById("personalPosts");
   if (!container) return;
 
+  let accessStatus = null;
   let hasAccess = isOwner;
 
   if (!isOwner) {
@@ -224,41 +225,33 @@ async function loadPersonalPosts({ isOwner }) {
       API + "/api/personal-access/status/" + profileUserId,
       { headers: { Authorization: "Bearer " + token } }
     );
-    const data = await res.json();
-    hasAccess = data.status === "approved";
+    accessStatus = await res.json();
+    hasAccess = accessStatus.status === "approved";
   }
 
-// ❌ owner কখনোই এই block এ ঢুকবে না
-if (!isOwner && !hasAccess) {
-  const res = await fetch(
-    API + "/api/personal-access/status/" + profileUserId,
-    { headers: { Authorization: "Bearer " + token } }
-  );
-  const statusData = await res.json();
+  // ❌ viewer without access
+  if (!isOwner && !hasAccess) {
+    let msg = "🔒 Personal posts are private";
+    let btnHtml = "";
 
-  let msg = "🔒 Personal posts are private";
-  let btnHtml = "";
+    if (accessStatus.status === "pending") {
+      msg = "⏳ Access request sent. Waiting for approval.";
+      btnHtml = `
+        <button disabled>Request Sent</button>
+        <button onclick="cancelPersonalAccess()">❌ Cancel</button>
+      `;
+    } else if (accessStatus.status === "rejected") {
+      msg = "❌ Request rejected. You can try again.";
+      btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
+    } else {
+      btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
+    }
 
-  if (statusData.status === "pending") {
-    msg = "⏳ Access request sent. Waiting for approval.";
-    btnHtml = `
-      <button disabled>Request Sent</button>
-      <button onclick="cancelPersonalAccess()">❌ Cancel</button>
-    `;
-  } else if (statusData.status === "rejected") {
-    msg = "❌ Request rejected. You can try again.";
-    btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
-  } else {
-    btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
+    container.innerHTML = `<p style="color:#888">${msg}</p>${btnHtml}`;
+    return;
   }
 
-  container.innerHTML = `
-    <p style="color:#888">${msg}</p>
-    ${btnHtml}
-  `;
-  return;
-}
-
+  // ✅ load posts
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
@@ -271,34 +264,33 @@ if (!isOwner && !hasAccess) {
   }
 
   list.forEach(p => {
-  const div = document.createElement("div");
-  div.className = "personal-post";
-  div.style.border = "1px dashed #aaa";
-  div.style.padding = "8px";
-  div.style.marginBottom = "8px";
+    const div = document.createElement("div");
+    div.className = "personal-post";
+    div.style.border = "1px dashed #aaa";
+    div.style.padding = "8px";
+    div.style.marginBottom = "8px";
 
-  div.innerHTML = `
-    <p>${p.content || ""}</p>
-    ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
-    ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
-    <div style="font-size:12px;color:#666">
-      ${new Date(p.createdAt).toLocaleString()}
-    </div>
-  `;
-
-  // 🔥 DELETE BUTTON — only owner
-  if (isOwner) {
-    div.innerHTML += `
-      <button style="margin-top:6px;color:red"
-        onclick="deletePersonalPost('${p._id}', this)">
-        🗑 Delete
-      </button>
+    div.innerHTML = `
+      <p>${p.content || ""}</p>
+      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
+      <div style="font-size:12px;color:#666">
+        ${new Date(p.createdAt).toLocaleString()}
+      </div>
     `;
-  }
 
-  container.appendChild(div);
-});
+    if (isOwner) {
+      div.innerHTML += `
+        <button style="margin-top:6px;color:red"
+          onclick="deletePersonalPost('${p._id}', this)">
+          🗑 Delete
+        </button>
+      `;
+    }
 
+    container.appendChild(div);
+  });
+}
 /* ======================
    EDIT / SAVE PROFILE
 ====================== */
