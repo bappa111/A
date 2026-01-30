@@ -559,7 +559,7 @@ async function removePersonalAccess(userId, el) {
   el.closest(".access-item").remove();
 }
 
-async function deletePersonalPost(postId, el) {
+async function deletePersonalPost(postId, btn) {
   if (!confirm("Delete this personal post?")) return;
 
   await fetch(API + "/api/personal-posts/" + postId, {
@@ -568,7 +568,7 @@ async function deletePersonalPost(postId, el) {
   });
 
   // 🔥 instant UI remove
-  el.closest(".personal-post").remove();
+  btn.closest("div").remove();
 }
 async function loadAccessLists() {
   const res = await fetch(API + "/api/personal-access/all", {

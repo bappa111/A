@@ -146,17 +146,4 @@ router.post("/remove/:requesterId", auth, async (req, res) => {
   res.json({ removed: true });
 });
 
-// DELETE personal post
-router.delete("/personal-posts/:id", auth, async (req, res) => {
-  const post = await PersonalPost.findById(req.params.id);
-  if (!post) return res.status(404).json({ msg: "Post not found" });
-
-  // 🔒 owner check
-  if (post.user.toString() !== req.user.id) {
-    return res.status(403).json({ msg: "Not allowed" });
-  }
-
-  await post.deleteOne();
-  res.json({ success: true });
-});
 module.exports = router;
