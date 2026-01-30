@@ -21,6 +21,12 @@ const PersonalAccessRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// 🔥 IMPORTANT: prevent duplicate requests
+PersonalAccessRequestSchema.index(
+  { owner: 1, requester: 1 },
+  { unique: true }
+);
+
 module.exports = mongoose.model(
   "PersonalAccessRequest",
   PersonalAccessRequestSchema
