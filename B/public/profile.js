@@ -271,22 +271,33 @@ if (!isOwner && !hasAccess) {
   }
 
   list.forEach(p => {
-    const div = document.createElement("div");
-    div.style.border = "1px dashed #aaa";
-    div.style.padding = "8px";
-    div.style.marginBottom = "8px";
+  const div = document.createElement("div");
+  div.className = "personal-post";
+  div.style.border = "1px dashed #aaa";
+  div.style.padding = "8px";
+  div.style.marginBottom = "8px";
 
-    div.innerHTML = `
-      <p>${p.content || ""}</p>
-      ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
-      ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
-      <div style="font-size:12px;color:#666">
-        ${new Date(p.createdAt).toLocaleString()}
-      </div>
+  div.innerHTML = `
+    <p>${p.content || ""}</p>
+    ${p.image ? `<img src="${p.image}" style="max-width:100%">` : ""}
+    ${p.video ? `<video controls style="max-width:100%"><source src="${p.video}"></video>` : ""}
+    <div style="font-size:12px;color:#666">
+      ${new Date(p.createdAt).toLocaleString()}
+    </div>
+  `;
+
+  // 🔥 DELETE BUTTON — only owner
+  if (isOwner) {
+    div.innerHTML += `
+      <button style="margin-top:6px;color:red"
+        onclick="deletePersonalPost('${p._id}', this)">
+        🗑 Delete
+      </button>
     `;
-    container.appendChild(div);
-  });
-}
+  }
+
+  container.appendChild(div);
+});
 
 /* ======================
    EDIT / SAVE PROFILE
@@ -546,6 +557,18 @@ async function removePersonalAccess(userId, el) {
 
   // 🔥 instant UI update (NO reload)
   el.closest(".access-item").remove();
+}
+
+async function deletePersonalPost(postId, el) {
+  if (!confirm("Delete this personal post?")) return;
+
+  await fetch(API + "/api/personal-posts/" + postId, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  // 🔥 instant UI remove
+  el.closest(".personal-post").remove();
 }
 async function loadAccessLists() {
   const res = await fetch(API + "/api/personal-access/all", {
