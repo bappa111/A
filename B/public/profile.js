@@ -164,10 +164,13 @@ async function loadProfile() {
 
 /* OWNER UI — ONLY WHEN VIEWING OWN PROFILE */
 if (myId === profileUserId) {
-  editBtn.style.display = "inline-block";
-  picInput.style.display = "inline-block";
-  personalBox.style.display = "block";
+  document.querySelectorAll(".owner-only").forEach(el => {
+    el.style.display = "block";
+  });
 
+  editBtn.style.display = "inline-block";
+  picInput.style.display = "block";
+}
   const accessBox = document.getElementById("personalAccessRequests");
   if (accessBox) {
     accessBox.style.display = "block";

@@ -4,6 +4,10 @@ body {
   background: #f4f6f8;
 }
 
+/* 🔒 Owner-only UI hidden by default */
+.owner-only {
+  display: none;
+}
 .profile-page {
   max-width: 900px;
   margin: 20px auto;
