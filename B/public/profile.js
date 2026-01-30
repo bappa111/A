@@ -247,7 +247,11 @@ async function loadPersonalPosts({ isOwner }) {
       btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
     }
 
-    container.innerHTML = `<p style="color:#888">${msg}</p>${btnHtml}`;
+    container.innerHTML = `
+  <p style="color:#888;text-align:center">
+    🔒 This user’s personal posts are private
+  </p>
+`;
     return;
   }
 
