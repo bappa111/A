@@ -7,6 +7,7 @@
 </head>
 <body>
 
+<!-- ===== LOADER ===== -->
 <div id="loader" style="
   height:100vh;
   display:flex;
@@ -16,7 +17,9 @@
 ">
   Loading...
 </div>
-<div class="profile-page">
+
+<!-- ===== PROFILE PAGE (ALL CONTENT INSIDE) ===== -->
+<div id="profilePage" class="profile-page" style="display:none;">
 
   <!-- ===== PROFILE HEADER ===== -->
   <div class="profile-header">
@@ -25,31 +28,16 @@
     <div class="profile-info">
       <h2 id="profileTitle">Profile</h2>
 
-      <textarea
-        id="bio"
-        placeholder="Your bio"
-        disabled
-      ></textarea>
+      <textarea id="bio" placeholder="Your bio" disabled></textarea>
 
-      <input
-        id="nameInput"
-        placeholder="Your name"
-        disabled
-      />
+      <input id="nameInput" placeholder="Your name" disabled />
 
       <div class="edit-actions">
         <button id="editProfileBtn" onclick="enableProfileEdit()">✏️ Edit</button>
         <button id="saveBtn" onclick="updateProfile()">💾 Save</button>
       </div>
 
-      <input
-        type="file"
-        id="profilePicInput"
-        accept="image/*"
-      />
-<div id="profilePage" style="display:none;">
-  <!-- এখানে তোমার existing profile HTML থাকবে -->
-</div>
+      <input type="file" id="profilePicInput" accept="image/*" />
     </div>
   </div>
 
@@ -66,30 +54,21 @@
     <button id="requestAccessBtn">Request Access</button>
   </div>
 
-  <!-- ===== PUBLIC POSTS ===== -->
+  <!-- ===== POSTS ===== -->
   <section class="section">
     <h3>Posts</h3>
     <div id="posts"></div>
   </section>
 
-  <!-- ===== PERSONAL POST CREATE (OWNER) ===== -->
+  <!-- ===== CREATE PERSONAL POST ===== -->
   <section id="personalPostBox" class="section">
     <h3>🔒 Create Personal Post</h3>
-    <textarea
-      id="personalPostText"
-      placeholder="Write a personal post..."
-    ></textarea>
-
-    <input
-      type="file"
-      id="personalPostMedia"
-      accept="image/*,video/*"
-    />
-
+    <textarea id="personalPostText" placeholder="Write a personal post..."></textarea>
+    <input type="file" id="personalPostMedia" accept="image/*,video/*" />
     <button onclick="createPersonalPost()">Post (Private)</button>
   </section>
 
-  <!-- ===== PERSONAL ACCESS CONTROL (OWNER) ===== -->
+  <!-- ===== PERSONAL ACCESS CONTROL ===== -->
   <section id="personalAccessRequests" class="section">
     <h3>🔐 Personal Access Control</h3>
 
@@ -132,6 +111,7 @@
     document.getElementById("profilePage").style.display = "block";
   };
 </script>
+
 <script src="profile.js"></script>
 </body>
 </html>
