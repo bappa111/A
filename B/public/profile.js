@@ -1,17 +1,7 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
-document.addEventListener("DOMContentLoaded", () => {
-  const ownerOnly = [
-    "personalPostBox",
-    "personalAccessRequests"
-  ];
 
-  ownerOnly.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-});
 /* ======================
    AUTH HELPERS
 ====================== */
@@ -176,7 +166,7 @@ if (myId === profileUserId) {
     accessBox.style.display = "block";
     loadAccessLists();
   }
-}
+
 
   /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {

@@ -5,6 +5,7 @@
   <title>Profile</title>
   <link rel="stylesheet" href="profile.css">
 </head>
+
 <body>
 
 <!-- ===== LOADER ===== -->
@@ -18,7 +19,7 @@
   Loading...
 </div>
 
-<!-- ===== PROFILE PAGE (ALL CONTENT INSIDE) ===== -->
+<!-- ===== PROFILE PAGE ===== -->
 <div id="profilePage" class="profile-page" style="display:none;">
 
   <!-- ===== PROFILE HEADER ===== -->
@@ -29,15 +30,14 @@
       <h2 id="profileTitle">Profile</h2>
 
       <textarea id="bio" placeholder="Your bio" disabled></textarea>
-
       <input id="nameInput" placeholder="Your name" disabled />
 
-      <div class="edit-actions">
+      <div class="edit-actions owner-only">
         <button id="editProfileBtn" onclick="enableProfileEdit()">✏️ Edit</button>
         <button id="saveBtn" onclick="updateProfile()">💾 Save</button>
       </div>
 
-      <input type="file" id="profilePicInput" accept="image/*" />
+      <input type="file" id="profilePicInput" accept="image/*" class="owner-only" />
     </div>
   </div>
 
@@ -54,24 +54,28 @@
     <button id="requestAccessBtn">Request Access</button>
   </div>
 
-  <!-- ===== POSTS ===== -->
-  <section class="section">
-    <h3>Posts</h3>
-    <div id="posts"></div>
-  </section>
-
-  <!-- ===== CREATE PERSONAL POST ===== -->
-  <section id="personalPostBox" class="section">
+  <!-- ===== PUBLIC POSTS ===== -->
+  <section class="section" id="postsSection">
+  <h3>Posts</h3>
+  <div id="posts"></div>
+</section>
+  <!-- ===== CREATE PERSONAL POST (OWNER ONLY) ===== -->
+  <section id="personalPostBox" class="section owner-only">
     <h3>🔒 Create Personal Post</h3>
-    <textarea id="personalPostText" placeholder="Write a personal post..."></textarea>
-    <input type="file" id="personalPostMedia" accept="image/*,video/*" />
+    <textarea
+      id="personalPostText"
+      placeholder="Write a personal post..."
+    ></textarea>
+    <input
+      type="file"
+      id="personalPostMedia"
+      accept="image/*,video/*"
+    />
     <button onclick="createPersonalPost()">Post (Private)</button>
   </section>
 
-<section id="personalPostBox" class="section owner-only">
-
-  <!-- ===== PERSONAL ACCESS CONTROL ===== -->
-  <section id="personalAccessRequests" class="section">
+  <!-- ===== PERSONAL ACCESS CONTROL (OWNER ONLY) ===== -->
+  <section id="personalAccessRequests" class="section owner-only">
     <h3>🔐 Personal Access Control</h3>
 
     <h4>⏳ Pending</h4>
@@ -83,8 +87,6 @@
     <h4>❌ Rejected</h4>
     <div id="rejectedList"></div>
   </section>
-
-<section id="personalAccessRequests" class="section owner-only">
 
   <!-- ===== PERSONAL POSTS ===== -->
   <section class="section">
