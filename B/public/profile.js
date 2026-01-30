@@ -224,7 +224,8 @@ async function loadPersonalPosts({ isOwner }) {
     hasAccess = data.status === "approved";
   }
 
-if (!hasAccess) {
+// ❌ owner কখনোই এই block এ ঢুকবে না
+if (!isOwner && !hasAccess) {
   const res = await fetch(
     API + "/api/personal-access/status/" + profileUserId,
     { headers: { Authorization: "Bearer " + token } }
@@ -234,24 +235,25 @@ if (!hasAccess) {
   let msg = "🔒 Personal posts are private";
   let btnHtml = "";
 
-if (statusData.status === "pending") {
-  msg = "⏳ Access request sent. Waiting for approval.";
-  btnHtml = `
-    <button disabled>Request Sent</button>
-    <button onclick="cancelPersonalAccess()">❌ Cancel</button>
-  `;
-} else if (statusData.status === "rejected") {
-  msg = "❌ Request rejected. You can try again.";
-  btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
-} else {
-  btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
-}
+  if (statusData.status === "pending") {
+    msg = "⏳ Access request sent. Waiting for approval.";
+    btnHtml = `
+      <button disabled>Request Sent</button>
+      <button onclick="cancelPersonalAccess()">❌ Cancel</button>
+    `;
+  } else if (statusData.status === "rejected") {
+    msg = "❌ Request rejected. You can try again.";
+    btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
+  } else {
+    btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
+  }
 
-container.innerHTML = `
-  <p style="color:#888">${msg}</p>
-  ${btnHtml}
-`;
-return;
+  container.innerHTML = `
+    <p style="color:#888">${msg}</p>
+    ${btnHtml}
+  `;
+  return;
+}
 
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
