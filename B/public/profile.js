@@ -32,26 +32,27 @@ if (token && typeof io !== "undefined") {
 // REALTIME PERSONAL ACCESS EVENTS
 // ======================
 if (socket) {
-socket.on("access-requested", () => {
-  if (profileUserId === myId) {
-    loadAccessLists();
-  }
-});
+  socket.on("access-requested", () => {
+    if (profileUserId === myId) {
+      loadAccessLists();
+    }
+  });
 
   socket.on("access-approved", () => {
-    // 🔔 requester side refresh
     loadPersonalPosts({ isOwner: false });
   });
 
   socket.on("access-rejected", () => {
     loadPersonalPosts({ isOwner: false });
   });
+
+  socket.on("access-cancelled", () => {
+    if (profileUserId === myId) {
+      loadAccessLists();
+    }
+  });
 }
-socket.on("access-cancelled", () => {
-  if (profileUserId === myId) {
-    loadAccessLists(); // owner side refresh
-  }
-});
+
 /* ======================
    PERSONAL ACCESS STATUS
 ====================== */
@@ -67,7 +68,7 @@ async function checkPersonalAccessStatus() {
 
   if (data.status === "pending") {
     btn.innerText = "⏳ Request Pending";
-    btn.disabled = true;
+
   } else if (data.status === "approved") {
     btn.style.display = "none";
   } else if (data.status === "rejected") {
@@ -501,31 +502,18 @@ async function createPersonalPost() {
 }
 
 async function requestPersonalAccess() {
-  const btn = document.getElementById("requestAccessBtn");
-
   await fetch(API + "/api/personal-access/request/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  // 🔥 UI feedback
-  btn.innerText = "⏳ Request Sent";
-  btn.disabled = true;
-
-  // 🔥 IMPORTANT: reload personal posts section
   loadPersonalPosts({ isOwner: false });
 }
 async function cancelPersonalAccess() {
-  const btn = document.getElementById("requestAccessBtn");
-
   await fetch(API + "/api/personal-access/cancel/" + profileUserId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-
-  // 🔥 instant UI update
-  btn.innerText = "Request Access";
-  btn.disabled = false;
 
   loadPersonalPosts({ isOwner: false });
 }
