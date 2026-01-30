@@ -3,255 +3,117 @@
 <head>
   <meta charset="UTF-8" />
   <title>Profile</title>
+  <link rel="stylesheet" href="profile.css">
 </head>
 <body>
 
-<h3 id="profileTitle">Profile</h3>
+<div class="profile-page">
 
-<!-- ================= PROFILE PIC ================= -->
-<img
-  id="profilePic"
-  width="120"
-  style="cursor:pointer"
-  onclick="openFullPic()"
-/>
+  <!-- ===== PROFILE HEADER ===== -->
+  <div class="profile-header">
+    <img id="profilePic" onclick="openFullPic()" />
 
+    <div class="profile-info">
+      <h2 id="profileTitle">Profile</h2>
 
+      <textarea
+        id="bio"
+        placeholder="Your bio"
+        disabled
+      ></textarea>
 
-<input
-  type="file"
-  id="profilePicInput"
-  accept="image/*"
-  style="display:none"
-/>
+      <input
+        id="nameInput"
+        placeholder="Your name"
+        disabled
+      />
 
-<br>
+      <div class="edit-actions">
+        <button id="editProfileBtn" onclick="enableProfileEdit()">✏️ Edit</button>
+        <button id="saveBtn" onclick="updateProfile()">💾 Save</button>
+      </div>
 
-<!-- ================= NAME ================= -->
-<input
-  id="nameInput"
-  placeholder="Your name"
-  style="width:100%;margin-bottom:6px"
-  disabled
-/>
+      <input
+        type="file"
+        id="profilePicInput"
+        accept="image/*"
+      />
+    </div>
+  </div>
 
-<button
-  id="editProfileBtn"
-  onclick="enableProfileEdit()"
-  style="display:none"
->
-  ✏️ Edit
-</button>
+  <!-- ===== STATS ===== -->
+  <div class="profile-stats">
+    <span onclick="openFollowers()">👥 <b id="followersCount">0</b> Followers</span>
+    <span onclick="openFollowing()">➡️ <b id="followingCount">0</b> Following</span>
+  </div>
 
-<button
-  id="saveBtn"
-  onclick="updateProfile()"
-  style="display:none"
->
-  💾 Save
-</button>
+  <!-- ===== ACTION BUTTONS ===== -->
+  <div class="profile-actions">
+    <button id="chatBtn" onclick="openDM()">Chat</button>
+    <button id="followBtn" onclick="toggleFollow()">Follow</button>
+    <button id="requestAccessBtn">Request Access</button>
+  </div>
 
-<br><br>
+  <!-- ===== PUBLIC POSTS ===== -->
+  <section class="section">
+    <h3>Posts</h3>
+    <div id="posts"></div>
+  </section>
 
-<!-- ================= BIO ================= -->
-<textarea
-  id="bio"
-  placeholder="Your bio"
-  style="width:100%;height:60px"
-  disabled
-></textarea>
+  <!-- ===== PERSONAL POST CREATE (OWNER) ===== -->
+  <section id="personalPostBox" class="section">
+    <h3>🔒 Create Personal Post</h3>
+    <textarea
+      id="personalPostText"
+      placeholder="Write a personal post..."
+    ></textarea>
 
-<br><br>
+    <input
+      type="file"
+      id="personalPostMedia"
+      accept="image/*,video/*"
+    />
 
-<!-- ================= FOLLOW COUNTS ================= -->
-Followers:
-<span
-  id="followersCount"
-  onclick="openFollowers()"
-  style="cursor:pointer;color:blue"
->0</span>
-|
-Following:
-<span
-  id="followingCount"
-  onclick="openFollowing()"
-  style="cursor:pointer;color:blue"
->0</span>
+    <button onclick="createPersonalPost()">Post (Private)</button>
+  </section>
 
-<br><br>
+  <!-- ===== PERSONAL ACCESS CONTROL (OWNER) ===== -->
+  <section id="personalAccessRequests" class="section">
+    <h3>🔐 Personal Access Control</h3>
 
-<!-- ================= ACTION BUTTONS ================= -->
-<button id="chatBtn" onclick="openDM()">Chat</button>
-<button id="followBtn" onclick="toggleFollow()">Follow</button>
+    <h4>⏳ Pending</h4>
+    <div id="pendingList"></div>
 
-<hr>
+    <h4>✅ Approved</h4>
+    <div id="approvedList"></div>
 
-<!-- ================= PUBLIC POSTS ================= -->
-<div id="postsSection">
-  <h4>Posts</h4>
-  <div id="posts"></div>
+    <h4>❌ Rejected</h4>
+    <div id="rejectedList"></div>
+  </section>
+
+  <!-- ===== PERSONAL POSTS ===== -->
+  <section class="section">
+    <h3>🔒 Personal Posts</h3>
+    <div id="personalPosts"></div>
+  </section>
+
 </div>
 
-<hr>
-
-<!-- ================= PERSONAL POST CREATE ================= -->
-<div
-  id="personalPostBox"
-  style="display:none;margin-bottom:10px"
->
-  <textarea
-    id="personalPostText"
-    placeholder="Write a personal post..."
-    style="width:100%;height:80px"
-  ></textarea>
-
-  <input
-    type="file"
-    id="personalPostMedia"
-    accept="image/*,video/*"
-  />
-
-  <br><br>
-  <button onclick="createPersonalPost()">
-    Post (Private)
-  </button>
-</div>
-
-<!-- ================= PERSONAL ACCESS ================= -->
-<!-- ================= PERSONAL ACCESS (OWNER ONLY) ================= -->
-<div
-  id="personalAccessRequests"
-  style="display:none;margin-bottom:15px"
->
-  <h4>🔐 Personal Access Control</h4>
-
-  <h5>⏳ Pending Requests</h5>
-  <div id="pendingList"></div>
-
-  <h5>✅ Approved Users</h5>
-  <div id="approvedList"></div>
-
-  <h5>❌ Rejected Requests</h5>
-  <div id="rejectedList"></div>
-</div>
-
-<h4>🔒 Personal Posts</h4>
-
-<button
-  id="requestAccessBtn"
-  style="display:none"
->
-  Request Personal Access
-</button>
-
-<div id="personalPosts" style="margin-top:10px"></div>
-
-<!-- ================= FOLLOW LIST MODAL ================= -->
-<div
-  id="followModal"
-  style="
-    display:none;
-    position:fixed;
-    top:0;left:0;
-    width:100%;height:100%;
-    background:rgba(0,0,0,0.6);
-    z-index:9999;
-  "
->
-  <div
-    style="
-      background:#fff;
-      max-width:400px;
-      margin:60px auto;
-      padding:15px;
-      border-radius:6px;
-    "
-  >
-    <h4 id="modalTitle"></h4>
+<!-- ===== FOLLOW MODAL ===== -->
+<div id="followModal" class="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle"></h3>
     <div id="modalList"></div>
     <button onclick="closeModal()">Close</button>
   </div>
 </div>
 
-<!-- ================= UPLOAD PROGRESS ================= -->
-<div
-  id="uploadOverlay"
-  style="
-    display:none;
-    position:fixed;
-    top:0;left:0;
-    width:100%;height:100%;
-    background:rgba(0,0,0,0.5);
-    z-index:99999;
-    align-items:center;
-    justify-content:center;
-  "
->
-  <div
-    style="
-      width:120px;
-      height:120px;
-      border-radius:50%;
-      border:10px solid #ddd;
-      border-top:10px solid #4caf50;
-      animation:spin 1s linear infinite;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:20px;
-      background:#fff;
-    "
-  >
-    <span id="uploadPercent">0%</span>
-  </div>
+<!-- ===== FULL IMAGE VIEW ===== -->
+<div id="fullPicOverlay">
+  <button onclick="closeFullPic()">⬅️</button>
+  <img id="fullPicImg" />
 </div>
 
-<style>
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-</style>
-<!-- ================= FULL SCREEN PROFILE PIC ================= -->
-<div
-  id="fullPicOverlay"
-  style="
-    display:none;
-    position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background:#000;
-    z-index:999999;
-  "
->
-  <!-- Back button -->
-  <button
-    onclick="closeFullPic()"
-    style="
-      position:absolute;
-      top:15px; left:15px;
-      background:rgba(0,0,0,0.6);
-      color:#fff;
-      border:none;
-      font-size:10px;
-      padding:5px 8px;
-      border-radius:50%;
-      cursor:pointer;
-    "
-  >
-    ⬅️
-  </button>
-
-  <!-- Image -->
-  <img
-    id="fullPicImg"
-    style="
-      width:100%;
-      height:100%;
-      object-fit:contain;
-    "
-  />
-</div>
 <script src="profile.js"></script>
 </body>
 </html>
