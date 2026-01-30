@@ -162,11 +162,10 @@ if (myId === profileUserId) {
   picInput.style.display = "block";
 }
   const accessBox = document.getElementById("personalAccessRequests");
-  if (accessBox) {
+    if (accessBox && isOwner) {
     accessBox.style.display = "block";
     loadAccessLists();
   }
-
 
   /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {
