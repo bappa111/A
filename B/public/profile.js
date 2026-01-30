@@ -169,7 +169,7 @@ if (myId === profileUserId) {
 
   /* PRIVATE PROFILE */
   if (isPrivate && !isOwner && !isFollower) {
-    postsSection.style.display = "none";
+
     followBtn.style.display = "inline-block";
     followBtn.innerText = "Follow";
 
