@@ -32,12 +32,11 @@ if (token && typeof io !== "undefined") {
 // REALTIME PERSONAL ACCESS EVENTS
 // ======================
 if (socket) {
-  socket.on("access-requested", () => {
-    // 🔔 owner side refresh
-    if (profileUserId === myId) {
-      loadAccessRequests();
-    }
-  });
+socket.on("access-requested", () => {
+  if (profileUserId === myId) {
+    loadAccessLists();
+  }
+});
 
   socket.on("access-approved", () => {
     // 🔔 requester side refresh
@@ -513,7 +512,7 @@ async function approveAccess(id) {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-  loadAccessRequests();
+  loadAccessLists();
 }
 
 async function rejectAccess(id) {
@@ -521,16 +520,18 @@ async function rejectAccess(id) {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
-  loadAccessRequests();
+  loadAccessLists();
 }
-async function removePersonalAccess(userId) {
+
+/* 🔥 এখানেই বসাবে */
+async function removePersonalAccess(userId, el) {
   await fetch(API + "/api/personal-access/remove/" + userId, {
     method: "POST",
     headers: { Authorization: "Bearer " + token }
   });
 
-  // 🔥 UI instantly refresh
-  loadAccessRequests();   // pending/approved list refresh
+  // 🔥 instant UI update (NO reload)
+  el.closest(".access-item").remove();
 }
 async function loadAccessLists() {
   const res = await fetch(API + "/api/personal-access/all", {
@@ -544,38 +545,40 @@ async function loadAccessLists() {
 
   pending.innerHTML = approved.innerHTML = rejected.innerHTML = "";
 
-  list.forEach(r => {
-    const div = document.createElement("div");
-    div.style.marginBottom = "8px";
+list.forEach(r => {
+  const div = document.createElement("div");
 
-    div.innerHTML = `
-      <img src="${r.requester.profilePic || 'https://via.placeholder.com/30'}"
-           width="30" style="border-radius:50%">
-      ${r.requester.name}
+  /* 🔥 MUST: wrapper class */
+  div.className = "access-item";
+  div.style.marginBottom = "8px";
+
+  div.innerHTML = `
+    <img src="${r.requester.profilePic || 'https://via.placeholder.com/30'}"
+         width="30" style="border-radius:50%">
+    ${r.requester.name}
+  `;
+
+  if (r.status === "pending") {
+    div.innerHTML += `
+      <button onclick="approveAccess('${r._id}')">✅</button>
+      <button onclick="rejectAccess('${r._id}')">❌</button>
     `;
+    pending.appendChild(div);
+  }
 
-    if (r.status === "pending") {
-      div.innerHTML += `
-        <button onclick="approveAccess('${r._id}')">✅</button>
-        <button onclick="rejectAccess('${r._id}')">❌</button>
-      `;
-      pending.appendChild(div);
-    }
+  if (r.status === "approved") {
+    div.innerHTML += `
+      <button onclick="removePersonalAccess('${r.requester._id}', this)">
+        🚫 Remove
+      </button>
+    `;
+    approved.appendChild(div);
+  }
 
-    if (r.status === "approved") {
-      div.innerHTML += `
-        <button onclick="removePersonalAccess('${r.requester._id}')">🚫 Remove</button>
-      `;
-      approved.appendChild(div);
-    }
-
-    if (r.status === "rejected") {
-      div.innerHTML += `
-        <button onclick="approveAccess('${r._id}')">♻️ Approve</button>
-      `;
-      rejected.appendChild(div);
-    }
-  });
+  if (r.status === "rejected") {
+    rejected.appendChild(div);
+  }
+});
 }
 /* ======================
    INIT
