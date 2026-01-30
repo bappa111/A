@@ -248,9 +248,12 @@ async function loadPersonalPosts({ isOwner }) {
     }
 
     container.innerHTML = `
-  <p style="color:#888;text-align:center">
-    🔒 This user’s personal posts are private
+  <p style="color:#888;text-align:center;margin-bottom:10px">
+    ${msg}
   </p>
+  <div style="text-align:center">
+    ${btnHtml}
+  </div>
 `;
     return;
   }
