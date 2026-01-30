@@ -107,7 +107,26 @@ router.post("/reject/:id", auth, async (req, res) => {
 
   res.json({ rejected: true });
 });
+/* ======================
+   CANCEL ACCESS REQUEST (REQUESTER ONLY)
+====================== */
+router.post("/cancel/:ownerId", auth, async (req, res) => {
+  try {
+    await Access.deleteOne({
+      owner: req.params.ownerId,
+      requester: req.user.id,
+      status: "pending"
+    });
 
+    // 🔥 realtime notify owner
+    const { getIO } = require("../../socket/socket");
+    getIO().to(req.params.ownerId).emit("access-cancelled");
+
+    res.json({ cancelled: true });
+  } catch (e) {
+    res.status(500).json({ msg: "Cancel failed" });
+  }
+});
 /* ======================
    REMOVE ACCESS (OWNER ONLY)
 ====================== */

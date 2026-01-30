@@ -47,6 +47,11 @@ socket.on("access-requested", () => {
     loadPersonalPosts({ isOwner: false });
   });
 }
+socket.on("access-cancelled", () => {
+  if (profileUserId === myId) {
+    loadAccessLists(); // owner side refresh
+  }
+});
 /* ======================
    PERSONAL ACCESS STATUS
 ====================== */
@@ -229,22 +234,24 @@ if (!hasAccess) {
   let msg = "🔒 Personal posts are private";
   let btnHtml = "";
 
-  if (statusData.status === "pending") {
-    msg = "⏳ Access request sent. Waiting for approval.";
-    btnHtml = `<button disabled>Request Sent</button>`;
-  } else if (statusData.status === "rejected") {
-    msg = "❌ Request rejected. You can try again.";
-    btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
-  } else {
-    btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
-  }
-
-  container.innerHTML = `
-    <p style="color:#888">${msg}</p>
-    ${btnHtml}
+if (statusData.status === "pending") {
+  msg = "⏳ Access request sent. Waiting for approval.";
+  btnHtml = `
+    <button disabled>Request Sent</button>
+    <button onclick="cancelPersonalAccess()">❌ Cancel</button>
   `;
-  return;
+} else if (statusData.status === "rejected") {
+  msg = "❌ Request rejected. You can try again.";
+  btnHtml = `<button onclick="requestPersonalAccess()">Request Again</button>`;
+} else {
+  btnHtml = `<button onclick="requestPersonalAccess()">Request Access</button>`;
 }
+
+container.innerHTML = `
+  <p style="color:#888">${msg}</p>
+  ${btnHtml}
+`;
+return;
 
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
@@ -504,6 +511,20 @@ async function requestPersonalAccess() {
   btn.disabled = true;
 
   // 🔥 IMPORTANT: reload personal posts section
+  loadPersonalPosts({ isOwner: false });
+}
+async function cancelPersonalAccess() {
+  const btn = document.getElementById("requestAccessBtn");
+
+  await fetch(API + "/api/personal-access/cancel/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  // 🔥 instant UI update
+  btn.innerText = "Request Access";
+  btn.disabled = false;
+
   loadPersonalPosts({ isOwner: false });
 }
 
