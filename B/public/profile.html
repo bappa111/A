@@ -7,6 +7,15 @@
 </head>
 <body>
 
+<div id="loader" style="
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:18px;
+">
+  Loading...
+</div>
 <div class="profile-page">
 
   <!-- ===== PROFILE HEADER ===== -->
@@ -38,6 +47,9 @@
         id="profilePicInput"
         accept="image/*"
       />
+<div id="profilePage" style="display:none;">
+  <!-- এখানে তোমার existing profile HTML থাকবে -->
+</div>
     </div>
   </div>
 
@@ -114,6 +126,12 @@
   <img id="fullPicImg" />
 </div>
 
+<script>
+  window.onload = function () {
+    document.getElementById("loader").style.display = "none";
+    document.getElementById("profilePage").style.display = "block";
+  };
+</script>
 <script src="profile.js"></script>
 </body>
 </html>
