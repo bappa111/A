@@ -220,6 +220,7 @@ async function loadPersonalPosts({ isOwner }) {
   let accessStatus = null;
   let hasAccess = isOwner;
 
+  // 🔎 access status check (viewer হলে)
   if (!isOwner) {
     const res = await fetch(
       API + "/api/personal-access/status/" + profileUserId,
@@ -229,9 +230,24 @@ async function loadPersonalPosts({ isOwner }) {
     hasAccess = accessStatus.status === "approved";
   }
 
-  // ❌ viewer without access
+  /* =========================
+     VIEWER HAS ACCESS (can leave)
+  ========================== */
+  if (!isOwner && accessStatus && accessStatus.status === "approved") {
+    container.innerHTML = `
+      <div style="text-align:center;margin-bottom:12px">
+        <button onclick="leavePersonalAccess()" style="color:red">
+          🚫 Stop seeing personal posts
+        </button>
+      </div>
+    `;
+  }
+
+  /* =========================
+     VIEWER WITHOUT ACCESS
+  ========================== */
   if (!isOwner && !hasAccess) {
-    let msg = "🔒 Personal posts are private";
+    let msg = "🔒 This user’s personal posts are private";
     let btnHtml = "";
 
     if (accessStatus.status === "pending") {
@@ -248,25 +264,28 @@ async function loadPersonalPosts({ isOwner }) {
     }
 
     container.innerHTML = `
-  <p style="color:#888;text-align:center;margin-bottom:10px">
-    ${msg}
-  </p>
-  <div style="text-align:center">
-    ${btnHtml}
-  </div>
-`;
+      <p style="color:#888;text-align:center;margin-bottom:10px">
+        ${msg}
+      </p>
+      <div style="text-align:center">
+        ${btnHtml}
+      </div>
+    `;
     return;
   }
 
-  // ✅ load posts
+  /* =========================
+     LOAD PERSONAL POSTS
+  ========================== */
   const res = await fetch(API + "/api/personal-posts/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
   const list = await res.json();
 
-  container.innerHTML = "";
   if (!list.length) {
-    container.innerHTML = "<p style='color:#888'>No personal posts</p>";
+    container.innerHTML += `
+      <p style="color:#888;text-align:center">No personal posts</p>
+    `;
     return;
   }
 
@@ -616,6 +635,15 @@ list.forEach(r => {
   }
 });
 }
+async function leavePersonalAccess() {
+  await fetch(API + "/api/personal-access/remove/" + profileUserId, {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadPersonalPosts({ isOwner: false });
+}
+
 /* ======================
    INIT
 ====================== */
