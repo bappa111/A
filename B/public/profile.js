@@ -10,44 +10,12 @@ const remoteAudio = document.getElementById("remoteAudio");
 let incomingCall = null;
 let localStream;
 let peerConnection;
+let pendingIceCandidates = [];
 
 const rtcConfig = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 };
-acceptCallBtn.onclick = async () => {
-  const { from, offer } = incomingCall;
 
-  callControls.style.display = "flex";
-  acceptCallBtn.style.display = "none";
-  rejectCallBtn.style.display = "none";
-  endCallBtn.style.display = "inline-block";
-
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  peerConnection = new RTCPeerConnection(rtcConfig);
-
-  peerConnection.ontrack = e => {
-    remoteAudio.srcObject = e.streams[0];
-  };
-
-  localStream.getTracks().forEach(track =>
-    peerConnection.addTrack(track, localStream)
-  );
-
-  peerConnection.onicecandidate = e => {
-    if (e.candidate) {
-      socket.emit("ice-candidate", {
-        to: from,
-        candidate: e.candidate
-      });
-    }
-  };
-
-  await peerConnection.setRemoteDescription(offer);
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-
-  socket.emit("call-answer", { to: from, answer });
-};
 /* ======================
    AUTH HELPERS
 ====================== */
@@ -88,66 +56,22 @@ if (token && typeof io !== "undefined") {
     alert("📞 Incoming call");
   });
 
-  // 📞 call answered
-  socket.on("call-answer", async ({ answer }) => {
-    if (!peerConnection) return;
-    await peerConnection.setRemoteDescription(answer);
-  });
-
   // ❄ ICE
-  socket.on("ice-candidate", async ({ candidate }) => {
-    if (candidate && peerConnection) {
-      await peerConnection.addIceCandidate(candidate);
-    }
-  });
+socket.on("ice-candidate", async ({ candidate }) => {
+  if (!candidate) return;
 
+  if (peerConnection) {
+    await peerConnection.addIceCandidate(candidate);
+  } else {
+    pendingIceCandidates.push(candidate);
+  }
+});
   // ❌ call ended by other user
   socket.on("call-ended", () => {
     cleanupCall();
     alert("📞 Call ended by other user");
   });
 }
-
-
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-  peerConnection = new RTCPeerConnection(rtcConfig);
-
-  localStream.getTracks().forEach(track =>
-    peerConnection.addTrack(track, localStream)
-  );
-
-  peerConnection.onicecandidate = e => {
-    if (e.candidate) {
-      socket.emit("ice-candidate", {
-        to: from,
-        candidate: e.candidate
-      });
-    }
-  };
-
-  await peerConnection.setRemoteDescription(offer);
-
-  const answer = await peerConnection.createAnswer();
-  await peerConnection.setLocalDescription(answer);
-
-  socket.emit("call-answer", {
-    to: from,
-    answer
-  });
-});
-// ✅ receiver gets answer
-socket.on("call-answer", async ({ answer }) => {
-  if (!peerConnection) return;
-  await peerConnection.setRemoteDescription(answer);
-});
-
-// ✅ ICE candidate exchange
-socket.on("ice-candidate", async ({ candidate }) => {
-  if (candidate && peerConnection) {
-    await peerConnection.addIceCandidate(candidate);
-  }
-});
 // ======================
 // REALTIME PERSONAL ACCESS EVENTS
 // ======================
@@ -776,6 +700,11 @@ async function startCall() {
   localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   peerConnection = new RTCPeerConnection(rtcConfig);
+pendingIceCandidates.forEach(c =>
+  peerConnection.addIceCandidate(c)
+);
+pendingIceCandidates = [];
+
 peerConnection.ontrack = e => {
   remoteAudio.srcObject = e.streams[0];
 };
@@ -808,30 +737,33 @@ document.getElementById("endCallBtn").style.display = "inline-block";
 }
 
 function endCall() {
-  socket.emit("call-ended", { to: profileUserId });
-
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
+  if (socket) {
+    socket.emit("call-ended", { to: profileUserId });
   }
-
-  if (localStream) {
-    localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
-  }
-
-  endCallBtn.style.display = "none";
-}
-
-  document.getElementById("endCallBtn").style.display = "none";
+  cleanupCall();
   alert("📞 Call Ended");
 }
 // ======================
 // CALL BUTTON ACTIONS
 // ======================
+
+rejectCallBtn.onclick = () => {
+  incomingCall = null;
+  callControls.style.display = "none";
+};
+
+endCallBtn.onclick = () => {
+  if (socket) {
+    socket.emit("call-ended", { to: profileUserId });
+  }
+  cleanupCall();
+};
 acceptCallBtn.onclick = async () => {
+  if (!incomingCall) return;
+
   const { from, offer } = incomingCall;
 
+  callControls.style.display = "flex";
   acceptCallBtn.style.display = "none";
   rejectCallBtn.style.display = "none";
   endCallBtn.style.display = "inline-block";
@@ -863,16 +795,6 @@ acceptCallBtn.onclick = async () => {
   socket.emit("call-answer", { to: from, answer });
 };
 
-rejectCallBtn.onclick = () => {
-  incomingCall = null;
-  callControls.style.display = "none";
-};
-
-endCallBtn.onclick = () => {
-  socket.emit("call-ended", { to: profileUserId });
-  cleanupCall();
-};
-
 function cleanupCall() {
   if (peerConnection) {
     peerConnection.close();
@@ -884,8 +806,13 @@ function cleanupCall() {
     localStream = null;
   }
 
+  incomingCall = null;
+
   callControls.style.display = "none";
+  acceptCallBtn.style.display = "none";
+  rejectCallBtn.style.display = "none";
   endCallBtn.style.display = "none";
+
   remoteAudio.srcObject = null;
 }
 /* ======================
