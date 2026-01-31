@@ -50,22 +50,34 @@
   <!-- ===== ACTION BUTTONS ===== -->
   <div class="profile-actions">
     <button id="chatBtn" onclick="openDM()">Chat</button>
+
     <button id="callBtn" onclick="startCall()" style="display:none">
-     📞 Call
+      📞 Call
     </button>
+
     <button id="followBtn" onclick="toggleFollow()">Follow</button>
     <button id="requestAccessBtn">Request Access</button>
   </div>
 
-<button id="endCallBtn" onclick="endCall()" style="display:none">
-  ❌ End Call
-</button>
+  <!-- ===== CALL CONTROLS (IMPORTANT) ===== -->
+  <div id="callControls" style="display:none; text-align:center; margin:10px 0;">
+    <button id="acceptCallBtn" style="display:none">✅ Accept</button>
+    <button id="rejectCallBtn" style="display:none">❌ Reject</button>
+  </div>
+
+  <button id="endCallBtn" onclick="endCall()" style="display:none">
+    ❌ End Call
+  </button>
+
+  <!-- 🔊 REMOTE AUDIO (MANDATORY FOR VOICE) -->
+  <audio id="remoteAudio" autoplay></audio>
 
   <!-- ===== PUBLIC POSTS ===== -->
   <section class="section" id="postsSection">
-  <h3>Posts</h3>
-  <div id="posts"></div>
-</section>
+    <h3>Posts</h3>
+    <div id="posts"></div>
+  </section>
+
   <!-- ===== CREATE PERSONAL POST (OWNER ONLY) ===== -->
   <section id="personalPostBox" class="section owner-only">
     <h3>🔒 Create Personal Post</h3>
