@@ -120,11 +120,11 @@ async function loadProfile() {
   const postsSection = document.getElementById("postsSection");
   const posts = document.getElementById("posts");
   const personalBox = document.getElementById("personalPostBox");
-
   const chatBtn = document.getElementById("chatBtn");
   const followBtn = document.getElementById("followBtn");
   const requestBtn = document.getElementById("requestAccessBtn");
-
+  const callBtn = document.getElementById("callBtn");
+  if (callBtn) callBtn.style.display = "none";
   /* ========== UNIVERSAL RESET (IMPORTANT) ========== */
   nameInput.disabled = true;
   bio.disabled = true;
@@ -273,7 +273,14 @@ async function loadPersonalPosts({ isOwner }) {
     `;
     return;
   }
+// 🔥 CALL BUTTON PERMISSION LOGIC
+const callBtn = document.getElementById("callBtn");
+if (callBtn) callBtn.style.display = "none";
 
+// owner OR approved access → call allowed
+if (isOwner || hasAccess) {
+  if (callBtn) callBtn.style.display = "inline-block";
+}
   /* =========================
      LOAD PERSONAL POSTS
   ========================== */
@@ -643,7 +650,9 @@ async function leavePersonalAccess() {
 
   loadPersonalPosts({ isOwner: false });
 }
-
+function startCall() {
+  alert("📞 Call started (permission verified)");
+}
 /* ======================
    INIT
 ====================== */
