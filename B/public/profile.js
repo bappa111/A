@@ -1,7 +1,53 @@
 const API = "https://a-kisk.onrender.com";
 const token = localStorage.getItem("token");
 
+const callControls = document.getElementById("callControls");
+const acceptCallBtn = document.getElementById("acceptCallBtn");
+const rejectCallBtn = document.getElementById("rejectCallBtn");
+const endCallBtn = document.getElementById("endCallBtn");
+const remoteAudio = document.getElementById("remoteAudio");
 
+let incomingCall = null;
+let localStream;
+let peerConnection;
+
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+acceptCallBtn.onclick = async () => {
+  const { from, offer } = incomingCall;
+
+  callControls.style.display = "flex";
+  acceptCallBtn.style.display = "none";
+  rejectCallBtn.style.display = "none";
+  endCallBtn.style.display = "inline-block";
+
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  peerConnection.ontrack = e => {
+    remoteAudio.srcObject = e.streams[0];
+  };
+
+  localStream.getTracks().forEach(track =>
+    peerConnection.addTrack(track, localStream)
+  );
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        to: from,
+        candidate: e.candidate
+      });
+    }
+  };
+
+  await peerConnection.setRemoteDescription(offer);
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  socket.emit("call-answer", { to: from, answer });
+};
 /* ======================
    AUTH HELPERS
 ====================== */
@@ -21,38 +67,47 @@ const profileUserId = params.get("id") || myId;
    SOCKET (SAFE & SIMPLE)
 ====================== */
 let socket = null;
+
 if (token && typeof io !== "undefined") {
   socket = io(API, { query: { userId: myId } });
 
   socket.on("profile-updated", data => {
     if (data.userId !== profileUserId) return;
-    loadProfile(); // only reload profile
+    loadProfile();
   });
-}
-// 🔴 CALL ENDED (receiver side)
-if (socket) {
+
+  // 📞 incoming call
+  socket.on("call-offer", ({ from, offer }) => {
+    incomingCall = { from, offer };
+
+    callControls.style.display = "flex";
+    acceptCallBtn.style.display = "inline-block";
+    rejectCallBtn.style.display = "inline-block";
+    endCallBtn.style.display = "none";
+
+    alert("📞 Incoming call");
+  });
+
+  // 📞 call answered
+  socket.on("call-answer", async ({ answer }) => {
+    if (!peerConnection) return;
+    await peerConnection.setRemoteDescription(answer);
+  });
+
+  // ❄ ICE
+  socket.on("ice-candidate", async ({ candidate }) => {
+    if (candidate && peerConnection) {
+      await peerConnection.addIceCandidate(candidate);
+    }
+  });
+
+  // ❌ call ended by other user
   socket.on("call-ended", () => {
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-
-    if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
-      localStream = null;
-    }
-
-    const endBtn = document.getElementById("endCallBtn");
-    if (endBtn) endBtn.style.display = "none";
-
-    alert("📞 Call Ended by other user");
+    cleanupCall();
+    alert("📞 Call ended by other user");
   });
 }
 
-/*calling*/
-socket.on("call-offer", async ({ from, offer }) => {
-  const accept = confirm("Incoming voice call. Accept?");
-  if (!accept) return;
 
   localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -714,12 +769,7 @@ async function leavePersonalAccess() {
 
   loadPersonalPosts({ isOwner: false });
 }
-let localStream;
-let peerConnection;
 
-const rtcConfig = {
-  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
 
 async function startCall() {
   // 🔒 permission already backend checked
@@ -729,6 +779,8 @@ async function startCall() {
 peerConnection.ontrack = e => {
   remoteAudio.srcObject = e.streams[0];
 };
+
+endCallBtn.style.display = "inline-block";
 
   localStream.getTracks().forEach(track =>
     peerConnection.addTrack(track, localStream)
@@ -768,8 +820,73 @@ function endCall() {
     localStream = null;
   }
 
+  endCallBtn.style.display = "none";
+}
+
   document.getElementById("endCallBtn").style.display = "none";
   alert("📞 Call Ended");
+}
+// ======================
+// CALL BUTTON ACTIONS
+// ======================
+acceptCallBtn.onclick = async () => {
+  const { from, offer } = incomingCall;
+
+  acceptCallBtn.style.display = "none";
+  rejectCallBtn.style.display = "none";
+  endCallBtn.style.display = "inline-block";
+
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  peerConnection.ontrack = e => {
+    remoteAudio.srcObject = e.streams[0];
+  };
+
+  localStream.getTracks().forEach(track =>
+    peerConnection.addTrack(track, localStream)
+  );
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        to: from,
+        candidate: e.candidate
+      });
+    }
+  };
+
+  await peerConnection.setRemoteDescription(offer);
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  socket.emit("call-answer", { to: from, answer });
+};
+
+rejectCallBtn.onclick = () => {
+  incomingCall = null;
+  callControls.style.display = "none";
+};
+
+endCallBtn.onclick = () => {
+  socket.emit("call-ended", { to: profileUserId });
+  cleanupCall();
+};
+
+function cleanupCall() {
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+
+  callControls.style.display = "none";
+  endCallBtn.style.display = "none";
+  remoteAudio.srcObject = null;
 }
 /* ======================
    INIT
