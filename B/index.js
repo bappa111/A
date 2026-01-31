@@ -52,6 +52,9 @@ app.use("/api/personal-access", require("./personal/routes/personalAccessRoutes"
 const { initSocket } = require("./socket/socket");
 initSocket(server);
 
+/*calling*/
+const callRoutes = require("./call/routes/callRoutes");
+app.use("/api", callRoutes);
 /* ======================
    SERVER START
 ====================== */

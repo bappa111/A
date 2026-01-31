@@ -29,6 +29,51 @@ if (token && typeof io !== "undefined") {
     loadProfile(); // only reload profile
   });
 }
+
+/*calling*/
+socket.on("call-offer", async ({ from, offer }) => {
+  const accept = confirm("Incoming voice call. Accept?");
+  if (!accept) return;
+
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  localStream.getTracks().forEach(track =>
+    peerConnection.addTrack(track, localStream)
+  );
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        to: from,
+        candidate: e.candidate
+      });
+    }
+  };
+
+  await peerConnection.setRemoteDescription(offer);
+
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+
+  socket.emit("call-answer", {
+    to: from,
+    answer
+  });
+});
+// ✅ receiver gets answer
+socket.on("call-answer", async ({ answer }) => {
+  if (!peerConnection) return;
+  await peerConnection.setRemoteDescription(answer);
+});
+
+// ✅ ICE candidate exchange
+socket.on("ice-candidate", async ({ candidate }) => {
+  if (candidate && peerConnection) {
+    await peerConnection.addIceCandidate(candidate);
+  }
+});
 // ======================
 // REALTIME PERSONAL ACCESS EVENTS
 // ======================
@@ -650,8 +695,41 @@ async function leavePersonalAccess() {
 
   loadPersonalPosts({ isOwner: false });
 }
-function startCall() {
-  alert("📞 Call started (permission verified)");
+let localStream;
+let peerConnection;
+
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+async function startCall() {
+  // 🔒 permission already backend checked
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  localStream.getTracks().forEach(track =>
+    peerConnection.addTrack(track, localStream)
+  );
+
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) {
+      socket.emit("ice-candidate", {
+        to: profileUserId,
+        candidate: e.candidate
+      });
+    }
+  };
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  socket.emit("call-offer", {
+    to: profileUserId,
+    offer
+  });
+
+  alert("📞 Calling...");
 }
 /* ======================
    INIT
