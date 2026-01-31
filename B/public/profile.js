@@ -29,6 +29,25 @@ if (token && typeof io !== "undefined") {
     loadProfile(); // only reload profile
   });
 }
+// 🔴 CALL ENDED (receiver side)
+if (socket) {
+  socket.on("call-ended", () => {
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+
+    if (localStream) {
+      localStream.getTracks().forEach(t => t.stop());
+      localStream = null;
+    }
+
+    const endBtn = document.getElementById("endCallBtn");
+    if (endBtn) endBtn.style.display = "none";
+
+    alert("📞 Call Ended by other user");
+  });
+}
 
 /*calling*/
 socket.on("call-offer", async ({ from, offer }) => {
@@ -707,6 +726,9 @@ async function startCall() {
   localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   peerConnection = new RTCPeerConnection(rtcConfig);
+peerConnection.ontrack = e => {
+  remoteAudio.srcObject = e.streams[0];
+};
 
   localStream.getTracks().forEach(track =>
     peerConnection.addTrack(track, localStream)
@@ -720,6 +742,7 @@ async function startCall() {
       });
     }
   };
+document.getElementById("endCallBtn").style.display = "inline-block";
 
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
@@ -731,8 +754,26 @@ async function startCall() {
 
   alert("📞 Calling...");
 }
+
+function endCall() {
+  socket.emit("call-ended", { to: profileUserId });
+
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+
+  document.getElementById("endCallBtn").style.display = "none";
+  alert("📞 Call Ended");
+}
 /* ======================
    INIT
 ====================== */
 loadMyProfileHeader();
 loadProfile();
+
