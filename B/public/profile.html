@@ -14,8 +14,7 @@
   display:flex;
   justify-content:center;
   align-items:center;
-  font-size:18px;
-">
+  font-size:18px;">
   Loading...
 </div>
 
@@ -24,20 +23,19 @@
 
   <!-- ===== PROFILE HEADER ===== -->
   <div class="profile-header">
-    <img id="profilePic" onclick="openFullPic()" />
-
+    <img id="profilePic" />
     <div class="profile-info">
       <h2 id="profileTitle">Profile</h2>
 
-      <textarea id="bio" placeholder="Your bio" disabled></textarea>
       <input id="nameInput" placeholder="Your name" disabled />
+      <textarea id="bio" placeholder="Your bio" disabled></textarea>
 
       <div class="edit-actions owner-only">
         <button id="editProfileBtn" onclick="enableProfileEdit()">✏️ Edit</button>
         <button id="saveBtn" onclick="updateProfile()">💾 Save</button>
       </div>
 
-      <input type="file" id="profilePicInput" accept="image/*" class="owner-only" />
+      <input type="file" id="profilePicInput" class="owner-only" />
     </div>
   </div>
 
@@ -50,61 +48,25 @@
   <!-- ===== ACTION BUTTONS ===== -->
   <div class="profile-actions">
     <button id="chatBtn" onclick="openDM()">Chat</button>
-
-    <button id="callBtn" onclick="startCall()" style="display:none">
-      📞 Call
-    </button>
-
+    <button id="callBtn" onclick="startCall()" style="display:none">📞 Call</button>
     <button id="followBtn" onclick="toggleFollow()">Follow</button>
     <button id="requestAccessBtn">Request Access</button>
   </div>
 
-  <!-- ===== CALL CONTROLS (IMPORTANT) ===== -->
-  <div id="callControls" style="display:none; text-align:center; margin:10px 0;">
+  <!-- 🔥 CALL CONTROLS (VERY IMPORTANT) -->
+  <div id="callControls" style="display:none; margin:10px 0; text-align:center;">
     <button id="acceptCallBtn" style="display:none">✅ Accept</button>
     <button id="rejectCallBtn" style="display:none">❌ Reject</button>
   </div>
 
-  <button id="endCallBtn" onclick="endCall()" style="display:none">
-    ❌ End Call
-  </button>
+  <button id="endCallBtn" style="display:none">❌ End Call</button>
 
-  <!-- 🔊 REMOTE AUDIO (MANDATORY FOR VOICE) -->
   <audio id="remoteAudio" autoplay></audio>
 
-  <!-- ===== PUBLIC POSTS ===== -->
-  <section class="section" id="postsSection">
+  <!-- ===== POSTS ===== -->
+  <section class="section">
     <h3>Posts</h3>
     <div id="posts"></div>
-  </section>
-
-  <!-- ===== CREATE PERSONAL POST (OWNER ONLY) ===== -->
-  <section id="personalPostBox" class="section owner-only">
-    <h3>🔒 Create Personal Post</h3>
-    <textarea
-      id="personalPostText"
-      placeholder="Write a personal post..."
-    ></textarea>
-    <input
-      type="file"
-      id="personalPostMedia"
-      accept="image/*,video/*"
-    />
-    <button onclick="createPersonalPost()">Post (Private)</button>
-  </section>
-
-  <!-- ===== PERSONAL ACCESS CONTROL (OWNER ONLY) ===== -->
-  <section id="personalAccessRequests" class="section owner-only">
-    <h3>🔐 Personal Access Control</h3>
-
-    <h4>⏳ Pending</h4>
-    <div id="pendingList"></div>
-
-    <h4>✅ Approved</h4>
-    <div id="approvedList"></div>
-
-    <h4>❌ Rejected</h4>
-    <div id="rejectedList"></div>
   </section>
 
   <!-- ===== PERSONAL POSTS ===== -->
@@ -125,16 +87,16 @@
 </div>
 
 <!-- ===== FULL IMAGE VIEW ===== -->
-<div id="fullPicOverlay">
+<div id="fullPicOverlay" style="display:none">
   <button onclick="closeFullPic()">⬅️</button>
   <img id="fullPicImg" />
 </div>
 
 <script>
-  window.onload = function () {
-    document.getElementById("loader").style.display = "none";
-    document.getElementById("profilePage").style.display = "block";
-  };
+window.onload = () => {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("profilePage").style.display = "block";
+};
 </script>
 
 <script src="profile.js"></script>
