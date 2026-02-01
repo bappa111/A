@@ -146,12 +146,10 @@ async function loadProfile() {
   const res = await fetch(API + "/api/users/profile/" + profileUserId, {
     headers: { Authorization: "Bearer " + token }
   });
+  const isOwner = String(profileUserId) === String(myId);
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
-  if (!profileUserId && myId) {
-    profileUserId = myId;
-  }
   const isOwner = profileUserId === myId;
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
@@ -170,8 +168,7 @@ async function loadProfile() {
   const chatBtn = document.getElementById("chatBtn");
   const followBtn = document.getElementById("followBtn");
   const requestBtn = document.getElementById("requestAccessBtn");
-  const callBtn = document.getElementById("callBtn");
-  if (callBtn) callBtn.style.display = "none";
+
   /* ========== UNIVERSAL RESET (IMPORTANT) ========== */
   nameInput.disabled = true;
   bio.disabled = true;
@@ -204,7 +201,7 @@ async function loadProfile() {
     data.user.followingCount ?? data.user.following.length;
 
 /* OWNER UI — ONLY WHEN VIEWING OWN PROFILE */
-if (myId === profileUserId) {
+  if (isOwner) {
   document.querySelectorAll(".owner-only").forEach(el => {
     el.style.display = "block";
   });
