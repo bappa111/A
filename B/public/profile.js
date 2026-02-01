@@ -184,7 +184,11 @@ async function loadProfile() {
   postsSection.style.display = "block";
 
   /* BASIC DATA */
-  img.src = data.user.profilePic || "https://via.placeholder.com/120";
+  if (data.user.profilePic && data.user.profilePic.trim() !== "") {
+  img.src = data.user.profilePic;
+  } else {
+    img.src = "https://via.placeholder.com/120";
+  }
   img.onclick = openFullPic;
   img.style.cursor = "pointer";
   nameInput.value = data.user.name || "";
