@@ -21,16 +21,17 @@ const rtcConfig = {
 ====================== */
 function getMyId() {
   try {
-    return JSON.parse(atob(token.split(".")[1])).id;
-  } catch {
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.id || payload._id || null;
+  } catch (e) {
     return null;
   }
 }
 
 const params = new URLSearchParams(window.location.search);
 const myId = getMyId();
-const profileUserId = params.get("id") || myId;
-
+let profileUserId = params.get("id") || myId;
 /* ======================
    SOCKET (SAFE & SIMPLE)
 ====================== */
@@ -148,6 +149,9 @@ async function loadProfile() {
   const data = await res.json();
   if (!data.user) return alert("User not found");
 
+  if (!profileUserId && myId) {
+    profileUserId = myId;
+  }
   const isOwner = profileUserId === myId;
   const isFollower = data.user.followers.some(id => id.toString() === myId);
   const isPrivate = data.user.isPrivate === true;
